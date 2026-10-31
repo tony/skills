@@ -14,8 +14,8 @@ Usage: ``bump_pin.py <manifest> <name> <old> <new>``. Supported manifests:
 Comments, tool settings, scripts and every other byte stay as they were. A
 manifest the scanner cannot read unambiguously (multi-line strings in a
 dependency array, duplicate JSON keys, unknown syntax) is refused, not guessed.
-Where ``tomllib`` exists (Python 3.11+) the edited TOML is parsed and must
-differ from the original only in the changed pins.
+The edited TOML is parsed and must differ from the original only in the
+changed pins.
 
 Prints the number of pins changed. Exits 1 without writing when no pin
 matches, 2 on a usage error, 3 on a refusal or an access, decode or write
@@ -26,15 +26,14 @@ check-to-rename window are not guarded.
 """
 
 # ruff: noqa: EM101, TRY003, PLR2004
-# pyright: reportAny=false, reportUnusedCallResult=false
 import contextlib
-import importlib
 import json
 import os
 import re
 import stat
 import sys
 import tempfile
+import tomllib
 from pathlib import Path
 from typing import TYPE_CHECKING, cast, final
 
@@ -267,15 +266,16 @@ def _json_spans(text: str, name: str, old: str) -> list[tuple[int, int]]:
     blank = re.compile(r"\s*")
 
     def skip(i: int) -> int:
-        return blank.match(text, i).end()  # pyright: ignore[reportOptionalMemberAccess]
+        found = blank.match(text, i)
+        return found.end() if found else i
 
     def members(i: int) -> Iterator[tuple[str, int, int, object]]:
         i = skip(i + 1)
         while text[i] != "}":
-            key, i = decoder.raw_decode(text, i)
+            raw_key, i = decoder.raw_decode(text, i)
             i = skip(skip(i) + 1)
             value, end = decoder.raw_decode(text, i)
-            yield key, i, end, value
+            yield cast("str", raw_key), i, end, value
             i = skip(end)
             if text[i] == ",":
                 i = skip(i + 1)
@@ -325,10 +325,6 @@ def _toml_diff(a: object, b: object, path: tuple[object, ...] = ()) -> list[tupl
 
 
 def _verify_toml(before: str, after: str, count: int) -> None:
-    try:
-        tomllib = importlib.import_module("tomllib")
-    except ModuleNotFoundError:
-        return
     try:
         changed = _toml_diff(tomllib.loads(before), tomllib.loads(after))
     except ValueError as error:

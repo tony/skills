@@ -1,7 +1,6 @@
 """Version order, tag namespaces, changelog sections and leftover scans."""
 
 # ruff: noqa: S101, INP001, D103, S603, S607
-# pyright: reportAny=false, reportUnusedCallResult=false
 import io
 import json
 import subprocess
@@ -9,7 +8,7 @@ from contextlib import redirect_stderr, redirect_stdout
 from typing import TYPE_CHECKING
 
 import pytest
-import release_plan as plan  # pyright: ignore[reportImplicitRelativeImport]
+import release_plan as plan
 
 if TYPE_CHECKING:
     from pathlib import Path

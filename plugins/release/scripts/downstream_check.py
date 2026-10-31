@@ -16,7 +16,6 @@ https://docs.pypi.org/api/json/) and the npm registry (``/<package>/<version>``,
 https://github.com/npm/registry/blob/main/docs/REGISTRY-API.md).
 """
 
-# pyright: reportAny=false, reportUnusedCallResult=false
 import argparse
 import json
 import re

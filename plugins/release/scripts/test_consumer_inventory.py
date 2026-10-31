@@ -1,8 +1,6 @@
 """Critical branch discovery and non-converting checkout checks."""
 
 # ruff: noqa: S101, INP001, D103, SLF001, PLR2004
-# pyright: reportAny=false, reportExplicitAny=false, reportUnusedCallResult=false
-# pyright: reportPrivateUsage=false
 import argparse
 import base64
 import json
@@ -15,7 +13,7 @@ import time
 from pathlib import Path
 from typing import Any
 
-import consumer_inventory as inventory  # pyright: ignore[reportImplicitRelativeImport]
+import consumer_inventory as inventory
 import pytest
 
 

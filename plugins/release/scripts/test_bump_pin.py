@@ -1,12 +1,11 @@
 """Tests for bump_pin.py."""
 
 # ruff: noqa: S101, INP001, D103, PLR2004
-# pyright: reportUnusedCallResult=false
 import os
 import pathlib
 from typing import TYPE_CHECKING
 
-import bump_pin  # pyright: ignore[reportImplicitRelativeImport]
+import bump_pin
 import pytest
 
 if TYPE_CHECKING:
