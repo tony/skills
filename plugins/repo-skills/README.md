@@ -67,7 +67,7 @@ in `references/skill-catalog.md`.
 
 ## Prerequisites
 
-- python 3.9 or newer (standard library only), for `scripts/evidence.py`
+- python 3.14 or newer (standard library only), for `scripts/evidence.py`
 - git
 - `uvx`, to run the pinned `agentgrep` over local AI transcripts; without
   it the transcript source is reported unavailable

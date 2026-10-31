@@ -48,14 +48,14 @@ jobs:
       - name: Type check
         run: uv run basedpyright
 
-      - name: Type check plugin scripts on Python 3.9
-        run: uv run basedpyright --pythonversion 3.9 plugins
+      - name: Type check plugin scripts on Python 3.14
+        run: uv run basedpyright --pythonversion 3.14 plugins
 
       - name: Tests
         run: uv run pytest -q
 
-      - name: Test plugin scripts on Python 3.9
-        run: uv run --no-project --isolated --python 3.9 --with pytest pytest -q plugins
+      - name: Test plugin scripts on Python 3.14
+        run: uv run --no-project --isolated --python 3.14 --with pytest pytest -q plugins
 
       - name: Marketplace lint
         run: uv run scripts/marketplace.py lint

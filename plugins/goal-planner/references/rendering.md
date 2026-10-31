@@ -40,7 +40,7 @@ candidate and name the conflict; never truncate requirements.
 ## Prepare helper input
 
 `<planner>` is `../scripts/planner.py`, resolved from this reference's directory
-to an absolute path written literally in each command. Use Python 3.9 or newer.
+to an absolute path written literally in each command. Use Python 3.14 or newer.
 Skills declare their own relative helper path.
 
 Generic output is stdout-only; save only when requested or selected by an

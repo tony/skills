@@ -113,6 +113,6 @@ but its history is messy.
 
 - **git**: 2.38+ for `RECUT_UPDATE_REFS` (`--update-refs`). Check with
   `git --version`.
-- **python3**: 3.9+ for `scripts/branch_gate.py`.
+- **python3**: 3.14+ for `scripts/branch_gate.py`.
 - **gh**: (Optional) to read PRs, reviews, and linked issues. Degrades to
   git-only if missing.

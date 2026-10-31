@@ -24,7 +24,7 @@ import subprocess
 import sys
 import typing as t
 from collections import Counter, defaultdict
-from datetime import date, datetime, timedelta, timezone
+from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 
 if t.TYPE_CHECKING:
@@ -139,7 +139,7 @@ def parse_history(
         stamp = rec.get("timestamp")
         day = ""
         if isinstance(stamp, (int, float)):
-            day = datetime.fromtimestamp(stamp / 1000, tz=timezone.utc).date().isoformat()
+            day = datetime.fromtimestamp(stamp / 1000, tz=UTC).date().isoformat()
         project = rec.get("project")
         proj = project if isinstance(project, str) else ""
         prompts.append(Prompt(day, display, proj))

@@ -215,7 +215,7 @@ def _package_range(root: Path) -> str:
             spec = pkg[section]["tailwindcss"] if section in pkg else None
             if isinstance(spec, str):
                 return spec
-    except (ValueError, KeyError, TypeError):
+    except ValueError, KeyError, TypeError:
         pass
     return ""
 

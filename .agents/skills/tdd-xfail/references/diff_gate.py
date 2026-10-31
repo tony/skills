@@ -25,6 +25,7 @@ Untracked build caches (``__pycache__/``, ``.pytest_cache/``, ``.mypy_cache/``,
 from __future__ import annotations
 
 import argparse
+import itertools
 import re
 import subprocess
 import sys
@@ -78,7 +79,7 @@ def is_cache(path: str) -> bool:
     parts = path.split("/")
     if path.endswith(".pyc") or any(p in CACHE_DIRS for p in parts):
         return True
-    return any(a == "node_modules" and b == ".cache" for a, b in zip(parts, parts[1:]))
+    return any(a == "node_modules" and b == ".cache" for a, b in itertools.pairwise(parts))
 
 
 def hidden_paths() -> list[str]:
@@ -137,7 +138,7 @@ def offenders(mode: str, patterns: list[str], paths: list[str]) -> list[str]:
     regexes = [glob_to_regex(p) for p in patterns]
     is_test = [any(r.match(p) for r in regexes) for p in paths]
     want_test = mode == "source-only"
-    return [p for p, t in zip(paths, is_test) if t == want_test]
+    return [p for p, t in zip(paths, is_test, strict=True) if t == want_test]
 
 
 def main() -> int:

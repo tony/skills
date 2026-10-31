@@ -32,7 +32,7 @@ import sys
 import tempfile
 import time
 import typing as t
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 import closest_model  # pyright: ignore[reportImplicitRelativeImport]
@@ -216,7 +216,7 @@ class EngineError(Exception):
 
 def stamp() -> str:
     """Return the current UTC time as ``YYYY-MM-DDTHH:MM:SSZ``."""
-    return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    return datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
 def emit(doc: Json) -> None:
@@ -605,7 +605,7 @@ def detect(
     listings: dict[str, list[str] | None] = {}
     if lister is not None and exes:
         with concurrent.futures.ThreadPoolExecutor(len(exes)) as pool:
-            listings = dict(zip(exes, pool.map(lister, exes)))
+            listings = dict(zip(exes, pool.map(lister, exes), strict=True))
     lanes: Json = {}
     for lane in LANES:
         chain = lane_chain(lane, which, listings.get if lister is not None else None)
@@ -894,7 +894,7 @@ def _git_paths(top: str | Path) -> dict[str, str]:
     if dotgit.is_dir() and not _sets_hooks_path(dotgit):
         return {name: str(dotgit / name) for name in names}
     out = git(top, "rev-parse", *[a for n in names for a in ("--git-path", n)])
-    return dict(zip(names, out.splitlines()))
+    return dict(zip(names, out.splitlines(), strict=True))
 
 
 def _file_digest(path: Path) -> str:
@@ -1112,7 +1112,7 @@ def _touched(top: str, pre_tree: str, post_tree: str) -> dict[str, str]:
     fields = git_z(
         top, "diff-tree", "-r", "--no-renames", "--name-status", "-z", pre_tree, post_tree
     )
-    return {path: status for status, path in zip(fields[0::2], fields[1::2])}
+    return {path: status for status, path in zip(fields[0::2], fields[1::2], strict=True)}
 
 
 def _guard_of(session: Json) -> Json:
@@ -1161,7 +1161,7 @@ def guard_check(session_dir: Path, label: str = "check", *, initial: bool = Fals
         seen = json.loads(last.read_text(encoding="utf-8"))
         if all(seen.get(key) == value for key, value in current.items()):
             return {**seen["result"], "repeat": True}
-    vid = f"{label}-{datetime.now(timezone.utc).strftime('%H%M%S')}-{random.randbytes(2).hex()}"
+    vid = f"{label}-{datetime.now(UTC).strftime('%H%M%S')}-{random.randbytes(2).hex()}"
     vdir = gdir / vid
     vdir.mkdir(mode=0o700)
     touched = _touched(top, pre["tree"], post_tree)
@@ -1476,8 +1476,7 @@ def init_session(  # noqa: PLR0913
     root = aip_root()
     repo_path = root / "repos" / repo_dir
     session_id = (
-        f"{datetime.now(timezone.utc).strftime('%Y%m%d-%H%M%SZ')}"
-        f"-{os.getpid()}-{random.randbytes(2).hex()}"
+        f"{datetime.now(UTC).strftime('%Y%m%d-%H%M%SZ')}-{os.getpid()}-{random.randbytes(2).hex()}"
     )
     session_dir = repo_path / "sessions" / command / session_id
     new_repo = not repo_path.exists()
@@ -2198,9 +2197,9 @@ def parse_judge(text: str, label_map: Mapping[str, str] | None = None) -> Json:
             continue
         values = t.cast("list[float]", nums)
         if label.lower().startswith("total"):
-            totals = dict(zip(columns, values))
+            totals = dict(zip(columns, values, strict=True))
             continue
-        for col, num in zip(columns, values):
+        for col, num in zip(columns, values, strict=True):
             if num > 10:  # noqa: PLR2004
                 errors.append(f"{label} for {col} is above 10")
             scores[col][label] = num
@@ -2386,7 +2385,7 @@ def _create_worktrees(
         return {"ok": True, "worktrees": made}
     require_safe_toplevel(top)
     base = base or ("head" if session.get("mutating") else "pre")
-    when = when or datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S")
+    when = when or datetime.now(UTC).strftime("%Y%m%d-%H%M%S")
     for name in participants:
         if name in made:
             continue

@@ -1,6 +1,6 @@
 #!/usr/bin/env -S uv run --script
 # /// script
-# requires-python = ">=3.12"
+# requires-python = ">=3.15"
 # dependencies = [
 #     "pydantic>=2.0",
 #     "rich>=13.0",
@@ -2077,7 +2077,7 @@ def _manifest_version(text: str | None) -> str | None:
         return None
     try:
         version = t.cast("dict[str, t.Any]", json.loads(text)).get("version")
-    except (json.JSONDecodeError, AttributeError):
+    except json.JSONDecodeError, AttributeError:
         return None
     return version if isinstance(version, str) else None
 
@@ -2557,7 +2557,7 @@ def _check_verbatim_fences(skill: BuiltSkill) -> list[str]:
             continue
         try:
             raw = source.read_text(encoding="utf-8")
-        except (OSError, UnicodeDecodeError):
+        except OSError, UnicodeDecodeError:
             continue
         if not has_verbatim_fences(raw):
             continue

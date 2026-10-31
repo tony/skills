@@ -95,7 +95,7 @@ def _trace(path: Path) -> tuple[Path, str, list[dict[str, object]]]:
 
 
 @contextmanager
-def _retained_workspace(original: Path, trace: Path) -> Generator[Path, None, None]:
+def _retained_workspace(original: Path, trace: Path) -> Generator[Path]:
     if original.is_dir():
         yield original
         return

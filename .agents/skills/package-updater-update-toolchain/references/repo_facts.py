@@ -468,7 +468,7 @@ def _diff_files(
             continue
         try:
             new = (Path(repo) / name).read_text()
-        except (OSError, UnicodeError):
+        except OSError, UnicodeError:
             out[name] = {"error": "not readable"}
             continue
         if state == ABSENT:

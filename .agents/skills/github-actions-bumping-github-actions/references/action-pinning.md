@@ -51,7 +51,7 @@ Pin reads name their repository and host: `git -C <path>` for a clone,
 `gh api --hostname github.com repos/<slug>/...` for the API. The working
 directory and inherited `GH_HOST` or `GH_REPO` must not select the target.
 
-`./pins.py` does this deterministically (Python 3.9 or newer;
+`./pins.py` does this deterministically (Python 3.14 or newer;
 running it with no arguments prints every command). It
 resolves the remote (`origin`, else the only remote), requires one declared
 HTTPS or SSH URL whose hostname is exactly `github.com`, then fetches and

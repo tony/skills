@@ -215,7 +215,7 @@ def drop(base: str, file: str, shas: list[str]) -> dict[str, object]:
 
     merge_base = out("merge-base", base, "HEAD")
     tip = out("rev-parse", "HEAD")
-    stamp = dt.datetime.now(dt.timezone.utc).strftime("%Y%m%d-%H%M%S%fZ")
+    stamp = dt.datetime.now(dt.UTC).strftime("%Y%m%d-%H%M%S%fZ")
     backup = f"{BACKUP_PREFIX}{stamp}"
     git("update-ref", f"refs/heads/{backup}", tip, "")
 

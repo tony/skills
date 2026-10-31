@@ -1,7 +1,7 @@
 [project]
 name = "skills"
 version = "0.1.0"
-requires-python = ">=3.12"
+requires-python = ">=3.15"
 
 [dependency-groups]
 dev = [
@@ -16,11 +16,11 @@ dev = [
 
 [tool.ruff]
 line-length = 100
-target-version = "py312"
+target-version = "py315"
 # User projects receive the templates; their style is the user's, not ours.
 extend-exclude = [".agents", "plugins/pytest-optimizer/templates"]
-# Plugin scripts run under the user's python3, which can be as old as 3.9.
-per-file-target-version = { "plugins/*/scripts/*.py" = "py39", "plugins/goal-planner/evals/*.py" = "py39" }
+# Plugin code runs under the user's python3, not this project's interpreter.
+per-file-target-version = { "plugins/**/*.py" = "py314", "shared/*.py" = "py314" }
 
 [tool.ruff.lint]
 select = ["ALL"]
@@ -34,7 +34,6 @@ ignore = [
     "C901",     # allow complex main() in CLI scripts
     "PLR0912",  # allow many branches in main()
     "CPY001",   # licence lives in LICENSE, not a per-file header
-    "PERF203",  # try in a loop is free from 3.11; the 3.9 cost is noise in CLI scripts
 ]
 
 [tool.ruff.lint.pydocstyle]

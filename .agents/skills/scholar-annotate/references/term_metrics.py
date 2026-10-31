@@ -473,7 +473,7 @@ def _contains(haystack: list[frozenset[str]], needle: list[frozenset[str]]) -> b
     """Return whether *needle* occurs in *haystack* as a contiguous run of matching words."""
     width = len(needle)
     return bool(needle) and any(
-        all(a & b for a, b in zip(haystack[i : i + width], needle))
+        all(a & b for a, b in zip(haystack[i : i + width], needle, strict=True))
         for i in range(len(haystack) - width + 1)
     )
 

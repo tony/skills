@@ -45,7 +45,7 @@ import re
 import shlex
 import subprocess
 import sys
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import final
 
@@ -274,7 +274,7 @@ def cmd_backup(args: argparse.Namespace) -> int:
         head = git("symbolic-ref", "--short", "HEAD")
         if head.returncode != 0 or head.stdout.strip() != args.branch:
             raise Refusal("not-checked-out", f"check out {args.branch} first; nothing was created")
-    stamp = datetime.now(tz=timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    stamp = datetime.now(tz=UTC).strftime("%Y%m%dT%H%M%SZ")
     stem = f"backup/{flat_name(args.branch)}-{stamp}"
     name = stem
     suffix = 1

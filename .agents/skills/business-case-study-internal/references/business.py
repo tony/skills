@@ -484,7 +484,7 @@ def _is_timestamp(text: str) -> bool:
     if not re.search(r"\d{2}:\d{2}", value):
         return False
     try:
-        _ = dt.datetime.fromisoformat(value.replace("Z", "+00:00"))
+        _ = dt.datetime.fromisoformat(value)
     except ValueError:
         return False
     return True
@@ -608,7 +608,7 @@ def _check_quantities(entries: dict[str, dict[str, str]]) -> list[str]:
     try:
         v = {i: float(entries[i]["value"]) for i in _SAVING_IDS}
         rate = float(entries["savings-rate"]["value"])
-    except (KeyError, ValueError):
+    except KeyError, ValueError:
         return problems
     if v["manual-minutes"] > 0:
         implied = (
@@ -708,7 +708,7 @@ def project(register: str) -> tuple[dict[str, float], list[str]]:
             base = float(entry["value"])
             low = float(entry.get("low") or base)
             high = float(entry.get("high") or base)
-        except (KeyError, ValueError):
+        except KeyError, ValueError:
             problems.append(f"{ident}: value, low, and high must be finite numbers")
             continue
         if not all(math.isfinite(x) for x in (low, base, high)):
@@ -829,7 +829,7 @@ def breakeven(register: str) -> tuple[dict[str, float | None], list[str], list[s
             base = float(entry["value"])
             low = float(entry.get("low") or base)
             high = float(entry.get("high") or base)
-        except (KeyError, ValueError):
+        except KeyError, ValueError:
             problems.append(f"{ident}: value, low, and high must be finite numbers")
             continue
         if not all(math.isfinite(x) for x in (low, base, high)):
@@ -1050,7 +1050,7 @@ def _column(rows: list[dict[str, str]], expr: str) -> list[float] | None:
                 for r in rows
                 if (r[left] or "").strip() and (r[right] or "").strip()
             ]
-    except (ValueError, TypeError):
+    except ValueError, TypeError:
         return None
     return values if all(math.isfinite(value) for value in values) else None
 
@@ -1147,7 +1147,7 @@ def record_source(
         _ = body.pop()
     if not any(OUTPUT_LINE.match(x) for x in body):
         body.append(f"- output: {rel}")
-    stamp = dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    stamp = dt.datetime.now(dt.UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
     body = [x for x in body if not TIMESTAMP_VALUE.match(x)]
     body.insert(min(1, len(body)), f"- executed: {stamp}")
     if query and not any(re.match(r"^\W*(?:query|command)\s*:", x, re.IGNORECASE) for x in body):
@@ -1301,7 +1301,7 @@ PR_COLUMNS = (
 
 
 def _timestamp(text: str) -> dt.datetime:
-    return dt.datetime.fromisoformat(text.replace("Z", "+00:00"))
+    return dt.datetime.fromisoformat(text)
 
 
 def _json_documents(text: str) -> list[object]:

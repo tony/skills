@@ -42,7 +42,7 @@ import urllib.error
 import urllib.parse
 import urllib.request
 import zipfile
-from datetime import date, datetime, timezone
+from datetime import UTC, date, datetime
 from pathlib import Path
 
 if t.TYPE_CHECKING:
@@ -454,7 +454,7 @@ def resolve_root(
 
 def now_utc() -> str:
     """Return the current UTC time as ``YYYY-MM-DDTHH:MM:SSZ``."""
-    return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    return datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
 # --- files ---------------------------------------------------------------------
@@ -1213,7 +1213,7 @@ def resolve_host(name: str) -> list[str]:
     """Addresses ``name`` resolves to; empty when it does not resolve."""
     try:
         infos = socket.getaddrinfo(name, None, proto=socket.IPPROTO_TCP)
-    except (socket.gaierror, UnicodeError, OSError):
+    except socket.gaierror, UnicodeError, OSError:
         return []
     return sorted({str(i[4][0]).split("%")[0] for i in infos})
 
@@ -1361,7 +1361,7 @@ def http_fetch(
             return resp.status, resp.url or url, body, dict(resp.headers.items())
     except urllib.error.HTTPError as e:
         return e.code, url, b"", {}
-    except (urllib.error.URLError, http.client.HTTPException, OSError, ValueError):
+    except urllib.error.URLError, http.client.HTTPException, OSError, ValueError:
         return 0, url, b"", {}
 
 

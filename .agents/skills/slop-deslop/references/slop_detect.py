@@ -265,7 +265,7 @@ def conventions_text() -> str:
     for name in CONVENTION_FILES:
         try:
             parts.append(Path(name).read_text(encoding="utf-8"))
-        except (OSError, UnicodeDecodeError):
+        except OSError, UnicodeDecodeError:
             continue
     return "\n".join(parts)
 
@@ -395,7 +395,7 @@ def scan_files(
             continue
         try:
             text = Path(path).read_text(encoding="utf-8")
-        except (OSError, UnicodeDecodeError):
+        except OSError, UnicodeDecodeError:
             continue
         new = (added or {}).get(path, set())
         for number, line in enumerate(text.splitlines(), start=1):

@@ -43,7 +43,7 @@ import os
 import re
 import subprocess
 import sys
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
@@ -92,7 +92,7 @@ def sites(root: str) -> list[tuple[str, int, str]]:
             continue
         try:
             lines = Path(root, rel).read_text(encoding="utf-8").splitlines()
-        except (OSError, UnicodeDecodeError):
+        except OSError, UnicodeDecodeError:
             continue
         in_ruff_repo = False
         for number, line in enumerate(lines, 1):
@@ -161,7 +161,7 @@ def _parse_cooldown(text: str) -> timedelta:
 
 
 def _when(stamp: str) -> datetime:
-    return datetime.fromisoformat(stamp.replace("Z", "+00:00")).astimezone(timezone.utc)
+    return datetime.fromisoformat(stamp).astimezone(UTC)
 
 
 def lapse(

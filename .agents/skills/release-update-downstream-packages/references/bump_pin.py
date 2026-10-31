@@ -321,7 +321,7 @@ def _toml_diff(a: object, b: object, path: tuple[object, ...] = ()) -> list[tupl
         first, second = cast("list[object]", a), cast("list[object]", b)
         if len(first) != len(second):
             return [path]
-        pairs = enumerate(zip(first, second))
+        pairs = enumerate(zip(first, second, strict=True))
         return [d for i, (x, y) in pairs for d in _toml_diff(x, y, (*path, i))]
     return [] if a == b else [path]
 

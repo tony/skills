@@ -46,7 +46,7 @@ defines. It runs when you ask for a rebase and never pushes.
 ## Prerequisites
 
 - git 2.36 or newer.
-- Python 3.9 or newer on a POSIX host, for the recovery helper.
+- Python 3.14 or newer on a POSIX host, for the recovery helper.
 - A remote carrying trunk; selection follows
   [the skill's inspection phase](skills/rebase/SKILL.md).
 

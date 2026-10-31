@@ -206,7 +206,7 @@ def test_check_quotes_against_a_local_clone(
     code = term_metrics.main([str(study), "--check-quotes", str(clone)])
     out = capsys.readouterr().out.splitlines()
     assert code == (1 if expected else 0)
-    assert [line[: len(exp)] for line, exp in zip(out, expected)] == expected
+    assert [line[: len(exp)] for line, exp in zip(out, expected, strict=False)] == expected
     assert len(out) == len(expected)
 
 

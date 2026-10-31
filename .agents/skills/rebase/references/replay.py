@@ -399,7 +399,7 @@ def main(argv: list[str]) -> int:
                 )
             ):
                 result.update(asdict(replay))
-        except (StopError, OSError, ValueError, TypeError):
+        except StopError, OSError, ValueError, TypeError:
             pass
         print(json.dumps(result))
         return 1

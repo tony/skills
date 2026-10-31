@@ -53,7 +53,7 @@ def _is_fork(slug: str) -> bool | None:
     )
     try:
         return bool(json.loads(done.stdout)["isFork"]) if done.returncode == 0 else None
-    except (ValueError, KeyError, TypeError):
+    except ValueError, KeyError, TypeError:
         return None
 
 

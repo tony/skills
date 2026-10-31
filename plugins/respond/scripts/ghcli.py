@@ -9,7 +9,10 @@ from __future__ import annotations
 
 import json
 import subprocess
-from typing import Callable
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 
 class GhError(Exception):

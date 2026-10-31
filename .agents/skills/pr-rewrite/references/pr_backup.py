@@ -19,7 +19,7 @@ import json
 import subprocess
 import sys
 import tempfile
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 
@@ -49,7 +49,7 @@ def save(pr: str) -> int:
     pr_json = _fetch(pr)
     body = str(pr_json["body"])
     root = Path(_run("git", "rev-parse", "--git-path", "pr-backups").strip()).resolve()
-    stamp = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%SZ")
+    stamp = datetime.now(UTC).strftime("%Y%m%d-%H%M%SZ")
     name = f"{stamp}-pr{pr_json['number']}"
     try:
         out = root / name

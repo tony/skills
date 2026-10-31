@@ -976,7 +976,7 @@ def tag_commit(action: str, tag: str) -> tuple[str, str, str]:
             if done.returncode:
                 return "unchecked", done.stderr.strip() or "gh failed", ""
             obj = json.loads(done.stdout)["object"]
-    except (KeyError, TypeError, ValueError):
+    except KeyError, TypeError, ValueError:
         pass
     return "unchecked", "unexpected ref response", ""
 
@@ -1037,7 +1037,7 @@ def proposal(slug: str, number: str) -> dict[str, Any]:
 
     def flush() -> None:
         nonlocal other
-        for old, new in zip(removed, added):
+        for old, new in zip(removed, added, strict=False):
             was, now = parse_uses(old), parse_uses(new)
             if (
                 was

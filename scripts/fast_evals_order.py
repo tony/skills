@@ -1,6 +1,6 @@
 #!/usr/bin/env -S uv run --script
 # /// script
-# requires-python = ">=3.12"
+# requires-python = ">=3.15"
 # ///
 """Order pending fast-suite cases longest-first, and remember how long they took.
 
@@ -33,7 +33,7 @@ def _duration(aggregate: Path) -> float | None:
     try:
         with aggregate.open(encoding="utf-8") as handle:
             report = t.cast("object", json.load(handle))
-    except (OSError, ValueError):
+    except OSError, ValueError:
         return None
     if not isinstance(report, dict):
         return None
@@ -46,7 +46,7 @@ def _load_cache(path: Path) -> dict[str, float]:
     try:
         with path.open(encoding="utf-8") as handle:
             loaded = t.cast("object", json.load(handle))
-    except (OSError, ValueError):
+    except OSError, ValueError:
         return {}
     if not isinstance(loaded, dict):
         return {}

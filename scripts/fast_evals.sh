@@ -6,12 +6,12 @@ set -uo pipefail
 
 SELF_DIR="$(cd "$(dirname "$0")" && pwd)"
 
-# The helpers carry a PEP 723 header; uv honours it, bare python3 does not.
-if command -v uv >/dev/null 2>&1; then
-  PY_RUN=(uv run --script)
-else
-  PY_RUN=(python3)
+# The helpers need Python 3.15, which their PEP 723 header asks uv for.
+if ! command -v uv >/dev/null 2>&1; then
+  echo "fast_evals.sh: uv is required to run the Python 3.15 helpers" >&2
+  exit 2
 fi
+PY_RUN=(uv run --script)
 cd "$SELF_DIR/.."
 
 LIST_ONLY=0

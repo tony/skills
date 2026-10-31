@@ -199,7 +199,7 @@ def changed(metrics: str, fresh: dict[str, str]) -> dict[str, list[str]]:
             continue
         before, after = _significant(recorded), _significant(fresh[command])
         if before != after:
-            pair = next((p for p in zip(before, after) if p[0] != p[1]), None)
+            pair = next((p for p in zip(before, after, strict=False) if p[0] != p[1]), None)
             detail = f"recorded {pair[0]}, now {pair[1]}" if pair else "line count differs"
             out["changed"].append(f"`{command}`: {detail}")
     return out

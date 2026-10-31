@@ -137,7 +137,7 @@ def _commit_patch_ids(sha: str) -> dict[str, str]:
     text = _run("git", "diff-tree", "--no-commit-id", "-p", "-U0", "-r", sha)
     sections = [part for part in re.split(r"(?m)^(?=diff --git )", text) if part]
     ids: dict[str, str] = {}
-    for path, section in zip([n for n in names if n], sections):
+    for path, section in zip([n for n in names if n], sections, strict=True):
         out = _run("git", "patch-id", "--stable", stdin=section).split()
         ids[path] = out[0] if out else ""
     return ids
@@ -205,7 +205,7 @@ def verify(record_path: str, rev_range: str, resolved: list[str]) -> int:
         return 1
     shas = _run("git", "rev-list", "--reverse", rev_range).split()
     bad = 0
-    for i, (was, now) in enumerate(zip(old, new)):
+    for i, (was, now) in enumerate(zip(old, new, strict=True)):
         changed = {p for p in was.keys() | now.keys() if was.get(p) != now.get(p)}
         if not changed:
             continue

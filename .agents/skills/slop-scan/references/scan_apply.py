@@ -89,7 +89,7 @@ def _clean_target(repo: Path, name: str, expected: str) -> None:
 
 
 @contextmanager
-def _cleanup(resource: str | Path) -> Generator[None, None, None]:
+def _cleanup(resource: str | Path) -> Generator[None]:
     try:
         yield
     except OSError as exc:
@@ -97,7 +97,7 @@ def _cleanup(resource: str | Path) -> Generator[None, None, None]:
 
 
 @contextmanager
-def _worktree(repo: Path, expected: str) -> Generator[Path, None, None]:
+def _worktree(repo: Path, expected: str) -> Generator[Path]:
     temporary = Path(tempfile.mkdtemp(prefix="slop-scan-"))
     scratch = temporary / "worktree"
     try:

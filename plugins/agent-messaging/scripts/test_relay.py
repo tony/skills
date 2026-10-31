@@ -132,7 +132,7 @@ def test_socket_send_adds_n_when_help_exits_nonzero() -> None:
 )
 def test_envelope_rejects_header_injection(extra: list[str]) -> None:
     args = {"--from": "p:c@s", "--to": "r", "--hop": "0", "--body": "hi"}
-    args.update(dict(zip(extra[::2], extra[1::2])))
+    args.update(dict(zip(extra[::2], extra[1::2], strict=True)))
     cmd = [str(RELAY), "envelope", *[x for kv in args.items() for x in kv]]
     result = subprocess.run(cmd, capture_output=True, text=True, check=False)
     assert result.returncode == 2, result.stdout
