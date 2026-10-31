@@ -52,7 +52,7 @@ $ uv run ruff check
 ### Type check
 
 ```console
-$ uv run basedpyright
+$ uv run ty check
 ```
 
 Plugin scripts run under the user's `python3`, whose version they do not
@@ -60,9 +60,10 @@ control. They target Python 3.14 (`per-file-target-version` in
 `pyproject.toml`), so they also check against 3.14:
 
 ```console
-$ uv run basedpyright \
-    --pythonversion 3.14 \
-    plugins
+$ uv run ty check \
+    --python-version 3.14 \
+    plugins \
+    shared
 ```
 
 ### Test

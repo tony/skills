@@ -46,10 +46,10 @@ jobs:
         run: uv run ruff format --check
 
       - name: Type check
-        run: uv run basedpyright
+        run: uv run ty check
 
       - name: Type check plugin scripts on Python 3.14
-        run: uv run basedpyright --pythonversion 3.14 plugins
+        run: uv run ty check --python-version 3.14 plugins shared
 
       - name: Tests
         run: uv run pytest -q
