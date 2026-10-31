@@ -143,9 +143,11 @@
         "references/branch-scope.md": "plugins/changelog/references/branch-scope.md",
         "references/commit-message.md": "plugins/changelog/references/commit-message.md",
         "references/entry-rules.md": "plugins/changelog/references/entry-rules.md",
-        "references/prose-rules.md": "plugins/changelog/references/prose-rules.md"
+        "references/graduation.md": "plugins/changelog/references/graduation.md",
+        "references/prose-rules.md": "plugins/changelog/references/prose-rules.md",
+        "references/release_plan.py": "plugins/changelog/scripts/release_plan.py"
       },
-      "bytes": 27126
+      "bytes": 61361
     },
     {
       "name": "changelog-refresh",
@@ -156,9 +158,11 @@
         "references/branch-scope.md": "plugins/changelog/references/branch-scope.md",
         "references/commit-message.md": "plugins/changelog/references/commit-message.md",
         "references/entry-rules.md": "plugins/changelog/references/entry-rules.md",
-        "references/prose-rules.md": "plugins/changelog/references/prose-rules.md"
+        "references/graduation.md": "plugins/changelog/references/graduation.md",
+        "references/prose-rules.md": "plugins/changelog/references/prose-rules.md",
+        "references/release_plan.py": "plugins/changelog/scripts/release_plan.py"
       },
-      "bytes": 26722
+      "bytes": 60987
     },
     {
       "name": "changelog-rewrite-aggressively",
@@ -169,10 +173,12 @@
         "references/branch-scope.md": "plugins/changelog/references/branch-scope.md",
         "references/commit-message.md": "plugins/changelog/references/commit-message.md",
         "references/entry-rules.md": "plugins/changelog/references/entry-rules.md",
+        "references/graduation.md": "plugins/changelog/references/graduation.md",
         "references/prose-rules.md": "plugins/changelog/references/prose-rules.md",
+        "references/release_plan.py": "plugins/changelog/scripts/release_plan.py",
         "references/rewrite.py": "plugins/changelog/scripts/rewrite.py"
       },
-      "bytes": 43108
+      "bytes": 77224
     },
     {
       "name": "commit",
@@ -1712,7 +1718,9 @@
     "plugins/changelog/references/branch-scope.md": 3,
     "plugins/changelog/references/commit-message.md": 3,
     "plugins/changelog/references/entry-rules.md": 3,
+    "plugins/changelog/references/graduation.md": 3,
     "plugins/changelog/references/prose-rules.md": 3,
+    "plugins/changelog/scripts/release_plan.py": 3,
     "plugins/disk/references/output-contract.md": 3,
     "plugins/github-actions/references/action-pinning.md": 3,
     "plugins/github-actions/references/commit-and-push.md": 3,
