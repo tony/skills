@@ -1,10 +1,10 @@
 """Tests for tier_plan.py."""
 
 # ruff: noqa: S101, S603, INP001, D103
-# pyright: reportUnusedCallResult=false, reportAny=false
 import json
 import subprocess
 import sys
+import typing as t
 from pathlib import Path
 
 import pytest
@@ -14,7 +14,7 @@ SCRIPT = Path(__file__).with_name("tier_plan.py")
 
 def run(
     tmp_path: Path, tiers: list[str], *ran: str, extra: tuple[str, ...] = ()
-) -> dict[str, object]:
+) -> dict[str, t.Any]:
     """Run the planner with ledger rows given as N:class:elapsed."""
     prompt = tmp_path / "prompt"
     prompt.write_text("x")
@@ -28,7 +28,9 @@ def run(
     command = [sys.executable, str(SCRIPT), "--prompt-file", str(prompt), *extra]
     command += [arg for tier in tiers for arg in ("--tier", tier)]
     out = subprocess.run(command, capture_output=True, text=True, check=True)
-    return json.loads(out.stdout)
+    doc = json.loads(out.stdout)
+    assert isinstance(doc, dict)
+    return doc
 
 
 @pytest.fixture

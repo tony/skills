@@ -1,7 +1,6 @@
 """Tests for run_tier.py using stub binaries."""
 
 # ruff: noqa: S101, S603, S607, INP001, PLR2004, D103
-# pyright: reportUnusedCallResult=false, reportAny=false
 import importlib.machinery
 import importlib.util
 import json
@@ -9,6 +8,7 @@ import os
 import re
 import subprocess
 import sys
+import typing as t
 from pathlib import Path
 
 import pytest
@@ -59,7 +59,7 @@ def tier(
     prompt: str = "hello",
     timeout: str = "5",
     require: tuple[str, ...] = (),
-) -> dict[str, object]:
+) -> dict[str, t.Any]:
     prompt_file = tmp_path / "prompt.txt"
     prompt_file.write_text(prompt)
     out = subprocess.run(
@@ -81,7 +81,9 @@ def tier(
         check=True,
         cwd=tmp_path,
     )
-    return json.loads(out.stdout)
+    doc = json.loads(out.stdout)
+    assert isinstance(doc, dict)
+    return doc
 
 
 @pytest.mark.integration(reason="executes the tier CLI and a shell stub")
@@ -351,7 +353,7 @@ print('--sandbox', flush=True)
     monkeypatch.chdir(tmp_path)
     execute = runner._execute  # noqa: SLF001
 
-    def short_probe(command: list[str], timeout: float) -> dict[str, object]:
+    def short_probe(command: list[str], timeout: float) -> dict[str, t.Any]:
         assert timeout == 30
         return execute(command, timeout=0.5)
 
