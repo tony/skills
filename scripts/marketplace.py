@@ -1677,10 +1677,15 @@ def doc_violations() -> list[DocViolation]:
                 path.read_text(encoding="utf-8", errors="replace")
             )
         )
-    for name in ("AGENTS.md", "README.md"):
-        path = REPO_ROOT / name
+    root_docs = [
+        REPO_ROOT / "AGENTS.md",
+        REPO_ROOT / "README.md",
+        *sorted((REPO_ROOT / ".github").glob("*.md")),
+    ]
+    for path in root_docs:
         if path.exists():
-            out.extend(_doc_violations_in("(root)", Path(name), path.read_text(encoding="utf-8")))
+            rel = path.relative_to(REPO_ROOT)
+            out.extend(_doc_violations_in("(root)", rel, path.read_text(encoding="utf-8")))
     return out
 
 
