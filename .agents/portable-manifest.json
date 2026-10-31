@@ -1452,14 +1452,14 @@
       "bytes": 23681
     },
     {
-      "name": "voice-rephrase",
+      "name": "voice-phrase",
       "sources": [
-        "plugins/voice/skills/rephrase/SKILL.md"
+        "plugins/voice/skills/phrase/SKILL.md"
       ],
       "bundled": {
         "references/prose-rules.md": "plugins/voice/references/prose-rules.md"
       },
-      "bytes": 8006
+      "bytes": 8346
     },
     {
       "name": "weave-architecture",
