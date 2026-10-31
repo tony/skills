@@ -1,9 +1,8 @@
 ---
 name: rebase
 description: >-
-  Use when asked to rebase the current branch onto remote trunk, check file
-  overlap, and resolve conflicts while preserving local edits
-disable-model-invocation: true
+  Use when a user explicitly wants to rebase a branch onto remote trunk,
+  check file overlap, and resolve conflicts while keeping local edits.
 allowed-tools: ["Bash", "Read", "Edit", "AskUserQuestion"]
 metadata:
   source: "plugins/rebase/skills/rebase/SKILL.md"

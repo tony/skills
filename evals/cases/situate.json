@@ -1,0 +1,29 @@
+{
+  "skill_name": "situate",
+  "trigger": {
+    "positive": [
+      {
+        "prompt": "situate yourself on both PRs before you tackle them",
+        "top_k": 1
+      },
+      {
+        "prompt": "study this branch and situate",
+        "top_k": 1
+      },
+      {
+        "prompt": "sweep this branch, its tickets, CI checks, and conventions before I edit anything",
+        "top_k": 2
+      }
+    ],
+    "negative": [
+      {
+        "prompt": "bring me up to speed on this repo before I change anything",
+        "owner": "situational-awareness"
+      },
+      {
+        "prompt": "huh?",
+        "owner": "brief"
+      }
+    ]
+  }
+}

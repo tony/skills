@@ -1,0 +1,25 @@
+{
+  "skill_name": "pr",
+  "trigger": {
+    "positive": [
+      {
+        "prompt": "commit it, push, and make a PR",
+        "top_k": 1
+      },
+      {
+        "prompt": "push and open a pr against main",
+        "top_k": 1
+      },
+      {
+        "prompt": "draft the PR description and create it with gh",
+        "top_k": 1
+      }
+    ],
+    "negative": [
+      {
+        "prompt": "file an issue for the bug we just found",
+        "owner": "create-issue"
+      }
+    ]
+  }
+}

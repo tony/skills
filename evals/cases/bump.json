@@ -1,0 +1,28 @@
+{
+  "skill_name": "bump",
+  "trigger": {
+    "positive": [
+      {
+        "prompt": "bump a new alpha release, tag, and push tags",
+        "top_k": 1
+      },
+      {
+        "prompt": "bump to the next alpha and check the version with me first",
+        "top_k": 1
+      },
+      {
+        "prompt": "which release comes next? bump it",
+        "top_k": 2
+      }
+    ],
+    "negative": [
+      {
+        "prompt": "dependabot opened a stack of PRs to bump the actions in my workflows",
+        "owner": "bumping-github-actions"
+      },
+      {
+        "prompt": "bump the request timeout to 30 seconds"
+      }
+    ]
+  }
+}

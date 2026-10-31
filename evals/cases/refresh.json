@@ -1,0 +1,24 @@
+{
+  "skill_name": "refresh",
+  "trigger": {
+    "positive": [
+      {
+        "prompt": "refresh the PR description so it matches what the branch does now",
+        "top_k": 1
+      },
+      {
+        "prompt": "the PR body went stale after the rebase, refresh it",
+        "top_k": 1
+      }
+    ],
+    "negative": [
+      {
+        "prompt": "refresh the .terraform.lock.hcl files in this repo",
+        "owner": "bumping-terraform"
+      },
+      {
+        "prompt": "refresh the browser tab"
+      }
+    ]
+  }
+}

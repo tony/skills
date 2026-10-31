@@ -1,0 +1,28 @@
+{
+  "skill_name": "bakeoff",
+  "trigger": {
+    "positive": [
+      {
+        "prompt": "bake off the approaches in separate worktrees and compare them",
+        "top_k": 1
+      },
+      {
+        "prompt": "when there's a fork in the road, use a bakeoff to pick the solution",
+        "top_k": 1
+      },
+      {
+        "prompt": "use a bakeoff to hedge risky approaches",
+        "top_k": 1
+      }
+    ],
+    "negative": [
+      {
+        "prompt": "spike this then bake off the approaches then spike again",
+        "owner": "ratchet"
+      },
+      {
+        "prompt": "the bake off at the county fair is on saturday"
+      }
+    ]
+  }
+}
