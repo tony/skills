@@ -1,8 +1,8 @@
 ---
 name: situate-refocus
 description: >-
-  Use when a branch may have drifted from its ticket or goal, and its
-  commits and gaps need reclassifying.
+  Use when a branch may have drifted from its ticket, issue, or goal, and
+  its commits and gaps need reclassifying.
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "AskUserQuestion"]
 metadata:
   argument-hint: "[the goal, when the repo does not record one]"

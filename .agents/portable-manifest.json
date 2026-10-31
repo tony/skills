@@ -1213,7 +1213,7 @@
         "references/prose-rules.md": "plugins/situate/references/prose-rules.md",
         "references/situation-sweep.md": "plugins/situate/references/situation-sweep.md"
       },
-      "bytes": 36294
+      "bytes": 36305
     },
     {
       "name": "situate-situational-awareness",
@@ -1240,7 +1240,7 @@
         "references/prose-rules.md": "plugins/situate/references/prose-rules.md",
         "references/situation-sweep.md": "plugins/situate/references/situation-sweep.md"
       },
-      "bytes": 35213
+      "bytes": 35138
     },
     {
       "name": "skill-style",
