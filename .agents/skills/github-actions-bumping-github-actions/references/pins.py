@@ -91,7 +91,7 @@ class Scalar(str):  # noqa: SLOT000
 
 
 Node = Any
-Row = tuple[int, str, int]
+type Row = tuple[int, str, int]
 
 
 def _quoted_end(text: str, start: int) -> int:

@@ -84,6 +84,7 @@ WEAVE_ENGINE = WEAVE_DIR / "scripts" / "engine.py"
 app = typer.Typer(help="E2E plugin lifecycle tests for tony/skills.")
 console = rich.console.Console()
 
+# typer cannot read a PEP 695 alias, so these stay plain assignments.
 Source = t.Literal["local", "github", "both"]
 Host = t.Literal["claude", "codex", "both"]
 

@@ -204,7 +204,7 @@ class _Row(_RowBase, total=False):
     cites: list[_Cite]
 
 
-Vector = dict[str, float]
+type Vector = dict[str, float]
 
 ANALYZER_VERSION = 2
 """Bumped when a change alters scoring output; the digest alone cannot say that."""

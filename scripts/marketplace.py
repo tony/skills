@@ -128,7 +128,7 @@ class Author(pydantic.BaseModel):
     url: str | None = None
 
 
-Category = t.Literal[
+type Category = t.Literal[
     "database",
     "deployment",
     "design",

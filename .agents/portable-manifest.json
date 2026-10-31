@@ -299,7 +299,7 @@
         "references/rebuild-contract.md": "plugins/git-branch/references/rebuild-contract.md",
         "references/split-mechanics.md": "plugins/git-branch/references/split-mechanics.md"
       },
-      "bytes": 75159
+      "bytes": 75164
     },
     {
       "name": "git-branch-soft-reset-and-recommit",
@@ -315,7 +315,7 @@
         "references/rebase-toolkit.md": "plugins/git-branch/references/rebase-toolkit.md",
         "references/split-mechanics.md": "plugins/git-branch/references/split-mechanics.md"
       },
-      "bytes": 67878
+      "bytes": 67883
     },
     {
       "name": "github-actions-bumping-github-actions",
@@ -332,7 +332,7 @@
         "references/prose-rules.md": "plugins/github-actions/references/prose-rules.md",
         "references/throwaway-worktree.md": "plugins/github-actions/references/throwaway-worktree.md"
       },
-      "bytes": 101985
+      "bytes": 101990
     },
     {
       "name": "github-actions-update-action",
@@ -349,7 +349,7 @@
         "references/prose-rules.md": "plugins/github-actions/references/prose-rules.md",
         "references/throwaway-worktree.md": "plugins/github-actions/references/throwaway-worktree.md"
       },
-      "bytes": 101172
+      "bytes": 101177
     },
     {
       "name": "github-actions-update-actions",
@@ -365,7 +365,7 @@
         "references/pins.py": "plugins/github-actions/scripts/pins.py",
         "references/prose-rules.md": "plugins/github-actions/references/prose-rules.md"
       },
-      "bytes": 97142
+      "bytes": 97147
     },
     {
       "name": "goal-planner-audit",
@@ -869,7 +869,7 @@
         "references/topic.py": "plugins/research/scripts/topic.py",
         "references/verify.md": "plugins/research/references/verify.md"
       },
-      "bytes": 252513
+      "bytes": 252518
     },
     {
       "name": "research-release",
@@ -1000,7 +1000,7 @@
         "references/prose-rules.md": "plugins/scholar/references/prose-rules.md",
         "references/term_metrics.py": "plugins/scholar/scripts/term_metrics.py"
       },
-      "bytes": 65105
+      "bytes": 65110
     },
     {
       "name": "scholar-ask",
@@ -1013,7 +1013,7 @@
         "references/stage-gates.md": "plugins/scholar/references/stage-gates.md",
         "references/term_metrics.py": "plugins/scholar/scripts/term_metrics.py"
       },
-      "bytes": 66512
+      "bytes": 66517
     },
     {
       "name": "scholar-compare",
@@ -1026,7 +1026,7 @@
         "references/stage-gates.md": "plugins/scholar/references/stage-gates.md",
         "references/term_metrics.py": "plugins/scholar/scripts/term_metrics.py"
       },
-      "bytes": 66529
+      "bytes": 66534
     },
     {
       "name": "scholar-contest",
@@ -1043,7 +1043,7 @@
         "references/stage-gates.md": "plugins/scholar/references/stage-gates.md",
         "references/term_metrics.py": "plugins/scholar/scripts/term_metrics.py"
       },
-      "bytes": 84636
+      "bytes": 84641
     },
     {
       "name": "scholar-distill",
@@ -1057,7 +1057,7 @@
         "references/stage-gates.md": "plugins/scholar/references/stage-gates.md",
         "references/term_metrics.py": "plugins/scholar/scripts/term_metrics.py"
       },
-      "bytes": 69396
+      "bytes": 69401
     },
     {
       "name": "scholar-extract",
@@ -1073,7 +1073,7 @@
         "references/stage-gates.md": "plugins/scholar/references/stage-gates.md",
         "references/term_metrics.py": "plugins/scholar/scripts/term_metrics.py"
       },
-      "bytes": 85586
+      "bytes": 85591
     },
     {
       "name": "scholar-gather",
@@ -1089,7 +1089,7 @@
         "references/stage-gates.md": "plugins/scholar/references/stage-gates.md",
         "references/term_metrics.py": "plugins/scholar/scripts/term_metrics.py"
       },
-      "bytes": 84023
+      "bytes": 84028
     },
     {
       "name": "scholar-ontology",
@@ -1105,7 +1105,7 @@
         "references/stage-gates.md": "plugins/scholar/references/stage-gates.md",
         "references/term_metrics.py": "plugins/scholar/scripts/term_metrics.py"
       },
-      "bytes": 75238
+      "bytes": 75243
     },
     {
       "name": "scholar-render",
@@ -1119,7 +1119,7 @@
         "references/stage-gates.md": "plugins/scholar/references/stage-gates.md",
         "references/term_metrics.py": "plugins/scholar/scripts/term_metrics.py"
       },
-      "bytes": 69522
+      "bytes": 69527
     },
     {
       "name": "scholar-revise",
@@ -1132,7 +1132,7 @@
         "references/stage-gates.md": "plugins/scholar/references/stage-gates.md",
         "references/term_metrics.py": "plugins/scholar/scripts/term_metrics.py"
       },
-      "bytes": 67046
+      "bytes": 67051
     },
     {
       "name": "scholar-verify",
@@ -1149,7 +1149,7 @@
         "references/term_metrics.py": "plugins/scholar/scripts/term_metrics.py",
         "references/verify_report.py": "plugins/scholar/scripts/verify_report.py"
       },
-      "bytes": 100440
+      "bytes": 100445
     },
     {
       "name": "self-improvement-apply",
@@ -1273,7 +1273,7 @@
         "references/slop_detect.py": "plugins/slop/scripts/slop_detect.py",
         "references/verification-gates.md": "plugins/slop/references/verification-gates.md"
       },
-      "bytes": 94828
+      "bytes": 94833
     },
     {
       "name": "slop-scan",
@@ -1290,7 +1290,7 @@
         "references/slop_detect.py": "plugins/slop/scripts/slop_detect.py",
         "references/verification-gates.md": "plugins/slop/references/verification-gates.md"
       },
-      "bytes": 94340
+      "bytes": 94345
     },
     {
       "name": "spike-bakeoff",

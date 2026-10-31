@@ -59,7 +59,7 @@ IN_PROGRESS = (
 )
 TRUNK_CANDIDATES = ("origin/main", "origin/master", "main", "master")
 FIELD = "\x1f"
-Row = tuple[str, str, str, str, str]
+type Row = tuple[str, str, str, str, str]
 
 
 @final

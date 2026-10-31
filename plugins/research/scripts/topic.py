@@ -48,7 +48,7 @@ if t.TYPE_CHECKING:
 
     Fetch = Callable[[str], tuple[int, str, bytes, dict[str, str]]]
 
-Row = dict[str, object]
+type Row = dict[str, object]
 
 DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 AUDIENCES = ("private", "internal", "public")

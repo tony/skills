@@ -12,7 +12,7 @@ import typing as t
 if t.TYPE_CHECKING:
     import collections.abc as cabc
 
-Violation = tuple[str, int, str]
+type Violation = tuple[str, int, str]
 
 SHELL_TAGS = frozenset({"bash", "sh", "shell", "zsh"})
 TOOL_PLUGINS = frozenset({"pytest-optimizer", "ruff", "tailwind", "terraform"})

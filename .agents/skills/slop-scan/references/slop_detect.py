@@ -42,7 +42,7 @@ import sys
 from pathlib import Path
 from typing import Any, final
 
-Sig = dict[str, Any]
+type Sig = dict[str, Any]
 
 HEX_ESCAPE = re.compile(r"\\x\{([0-9A-Fa-f]+)\}")
 HUNK = re.compile(r"^@@ -\d+(?:,\d+)? \+(\d+)(?:,(\d+))? @@")
