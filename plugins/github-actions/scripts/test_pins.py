@@ -1,12 +1,14 @@
 """Tests for pins.py with ``gh`` replaced by a stub on PATH."""
 
 # ruff: noqa: S101, INP001, S603, S607, SLF001
+import asyncio
 import json
 import os
 import re
 import shlex
 import subprocess
 import sys
+import threading
 from pathlib import Path
 from typing import TYPE_CHECKING
 from urllib.parse import parse_qs, unquote, urlsplit
@@ -921,3 +923,28 @@ def test_inventory_quotes_file_names_for_the_shell() -> None:
         ["sh", "-c", f"printf %s {quoted}"], capture_output=True, text=True, check=True
     )
     assert echoed.stdout == name
+
+
+def test_fetch_all_reads_concurrently_and_keeps_order() -> None:
+    """Two reads must be in flight together; results follow the names given."""
+    both_started = threading.Barrier(2, timeout=5)
+
+    def fetch(name: str) -> str | None:
+        both_started.wait()
+        return None if name == "gone" else name.upper()
+
+    assert asyncio.run(pins._fetch_all(fetch, ["a", "gone"])) == ["A", None]
+
+
+def test_fetch_all_returns_a_failed_read_in_place() -> None:
+    """A gh failure inside a read comes back as its exit, in order."""
+
+    def fetch(name: str) -> str | None:
+        if name == "bad":
+            raise SystemExit(1)
+        return name
+
+    ok, bad = asyncio.run(pins._fetch_all(fetch, ["ok", "bad"]))
+    assert ok == "ok"
+    assert isinstance(bad, SystemExit)
+    assert bad.code == 1
