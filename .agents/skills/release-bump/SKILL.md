@@ -1,9 +1,8 @@
 ---
 name: release-bump
 description: >-
-  Use when discovering and confirming the next version from a project's own
-  release scheme before cutting the release.
-disable-model-invocation: true
+  Use when a user explicitly wants to bump a project to its next release,
+  such as a new alpha, following its own scheme, then cut it.
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "AskUserQuestion"]
 metadata:
   argument-hint: "[patch|minor|major|prerelease|final|<version>] [--push] [--tag] [--push-tag]"

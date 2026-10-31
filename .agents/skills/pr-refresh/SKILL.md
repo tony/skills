@@ -1,9 +1,9 @@
 ---
 name: pr-refresh
 description: >-
-  Use when an existing PR description has gone stale and must match the
-  branch's current net change, keeping its structure and hand-written text.
-disable-model-invocation: true
+  Use when a user explicitly wants to refresh a stale description so it
+  matches what a branch now changes, keeping its structure and hand-written
+  text.
 allowed-tools: ["Bash", "Read", "Write", "AskUserQuestion"]
 metadata:
   argument-hint: "[PR number or URL, and/or a hint, e.g. 'the retry logic was dropped']"

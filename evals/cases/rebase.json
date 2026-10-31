@@ -1,0 +1,25 @@
+{
+  "skill_name": "rebase",
+  "trigger": {
+    "positive": [
+      {
+        "prompt": "rebase all PRs onto origin master and force push",
+        "top_k": 1
+      },
+      {
+        "prompt": "fetch, rebase onto trunk, fix conflicts, and force push",
+        "top_k": 1
+      },
+      {
+        "prompt": "make sure every branch is rebased on trunk, resolving any conflicts",
+        "top_k": 1
+      }
+    ],
+    "negative": [
+      {
+        "prompt": "squash these wip commits into clean atomic ones",
+        "owner": "soft-reset-and-recommit"
+      }
+    ]
+  }
+}

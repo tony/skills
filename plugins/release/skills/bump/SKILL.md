@@ -1,9 +1,8 @@
 ---
 name: bump
-description: "Use when discovering and confirming the next version from a project's own release scheme before cutting the release."
+description: "Use when a user explicitly wants to bump a project to its next release, such as a new alpha, following its own scheme, then cut it."
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "AskUserQuestion"]
 argument-hint: "[patch|minor|major|prerelease|final|<version>] [--push] [--tag] [--push-tag]"
-disable-model-invocation: true
 ---
 
 # Bump to the Next Version

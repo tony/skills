@@ -172,7 +172,7 @@
         "references/prose-rules.md": "plugins/changelog/references/prose-rules.md",
         "references/rewrite.py": "plugins/changelog/scripts/rewrite.py"
       },
-      "bytes": 43277
+      "bytes": 43210
     },
     {
       "name": "commit",
@@ -626,7 +626,7 @@
         "references/prose-rules.md": "plugins/pr/references/prose-rules.md",
         "references/template-resolution.md": "plugins/pr/references/template-resolution.md"
       },
-      "bytes": 18365
+      "bytes": 18307
     },
     {
       "name": "pr-merge-commit",
@@ -650,7 +650,7 @@
         "references/prose-rules.md": "plugins/pr/references/prose-rules.md",
         "references/resolve-and-backup.md": "plugins/pr/references/resolve-and-backup.md"
       },
-      "bytes": 23217
+      "bytes": 23156
     },
     {
       "name": "pr-review-pr",
@@ -778,7 +778,7 @@
         "references/prose-rules.md": "plugins/rebase/references/prose-rules.md",
         "references/replay.py": "plugins/rebase/scripts/replay.py"
       },
-      "bytes": 32192
+      "bytes": 32124
     },
     {
       "name": "release-bump",
@@ -789,7 +789,7 @@
         "references/release-conventions.md": "plugins/release/references/release-conventions.md",
         "references/release_plan.py": "plugins/release/scripts/release_plan.py"
       },
-      "bytes": 39096
+      "bytes": 39033
     },
     {
       "name": "release-cut",
@@ -1187,7 +1187,7 @@
         "references/report-shape.md": "plugins/situate/references/report-shape.md",
         "references/situation-sweep.md": "plugins/situate/references/situation-sweep.md"
       },
-      "bytes": 38135
+      "bytes": 38042
     },
     {
       "name": "situate-brief",
@@ -1213,7 +1213,7 @@
         "references/prose-rules.md": "plugins/situate/references/prose-rules.md",
         "references/situation-sweep.md": "plugins/situate/references/situation-sweep.md"
       },
-      "bytes": 36382
+      "bytes": 36294
     },
     {
       "name": "situate-situational-awareness",
@@ -1305,7 +1305,7 @@
         "references/spike.sh": "plugins/spike/scripts/spike.sh",
         "references/verification-gates.md": "plugins/spike/references/verification-gates.md"
       },
-      "bytes": 50670
+      "bytes": 50596
     },
     {
       "name": "spike-probe",
@@ -1319,7 +1319,7 @@
         "references/spike.sh": "plugins/spike/scripts/spike.sh",
         "references/verification-gates.md": "plugins/spike/references/verification-gates.md"
       },
-      "bytes": 43330
+      "bytes": 43274
     },
     {
       "name": "spike-ratchet",

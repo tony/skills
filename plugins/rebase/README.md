@@ -41,7 +41,7 @@ Claude Code uses a leading slash (`/rebase:…`). Codex omits it (`rebase:…`).
 
 `/rebase:rebase` in Claude Code, `rebase:rebase` in Codex: rebase the current
 branch onto trunk, resolve conflicts, and run the checks your `AGENTS.md` / `CLAUDE.md`
-defines. It never pushes, and it runs only when you invoke it by name.
+defines. It runs when you ask for a rebase and never pushes.
 
 ## Prerequisites
 

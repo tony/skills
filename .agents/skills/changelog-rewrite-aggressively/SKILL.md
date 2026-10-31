@@ -1,9 +1,8 @@
 ---
 name: changelog-rewrite-aggressively
 description: >-
-  Rebase out the branch's earlier changelog commits and regenerate its
-  entries fresh; commits only with --commit
-disable-model-invocation: true
+  Use when a user explicitly wants to strip CHANGES edits from mixed commits
+  by rebase and regenerate a branch changelog fresh.
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "AskUserQuestion"]
 metadata:
   argument-hint: "[--commit] [optional additional context about the changes]"
