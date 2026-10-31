@@ -522,10 +522,17 @@ name and its frontmatter `name` match, or the two hosts invoke it by
 different names.
 
 A skill carrying a workflow that only makes sense when the user asks for it by
-name sets `disable-model-invocation: true`; `portable` mirrors it into Codex's
+name, and that nobody chains into a prompt, a goal, or another skill's next
+step, sets `disable-model-invocation: true`; `portable` mirrors it into Codex's
 `agents/openai.yaml`. That keeps it invocable by name only and never routed to
 on the model's initiative, and keeps it out of a routing corpus where it would
 crowd skills meant to be discovered.
+
+Claude Code reliably runs a flagged skill only from a slash command that opens
+the prompt. It refuses one reached in a follow-up or `/goal` turn, named in
+another command's arguments, or offered by another skill's next-step panel. A
+skill users chain that way stays model-invocable, and its description makes an
+explicit request the trigger: "Use when a user explicitly wants to …".
 
 Address bundled files by climbing out of the skill directory
 (`../../references/x.md`), never through `${CLAUDE_PLUGIN_ROOT}`. Codex performs
