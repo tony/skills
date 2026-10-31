@@ -8,8 +8,6 @@ and exits 2. Run ``deps.py <command> --help`` for each command.
 
 # pyright: reportUnusedCallResult=false
 
-from __future__ import annotations
-
 import argparse
 import io
 import json

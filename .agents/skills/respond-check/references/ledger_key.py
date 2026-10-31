@@ -12,8 +12,6 @@ digest is printed, so a failed fetch never passes for empty feedback).
 """
 
 # pyright: reportUnusedCallResult=false
-from __future__ import annotations
-
 import hashlib
 import re
 import sys

@@ -3,8 +3,6 @@
 # ruff: noqa: S101, INP001, D103, SLF001, PLR2004
 # pyright: reportAny=false, reportExplicitAny=false, reportUnusedCallResult=false
 # pyright: reportPrivateUsage=false
-from __future__ import annotations
-
 import argparse
 import base64
 import json

@@ -32,8 +32,6 @@ github.com host independently of the working directory and host environment.
 
 # ruff: noqa: S603, S607, PLR2004, PLR0911, TRY003, EM102
 # pyright: reportUnusedCallResult=false, reportAny=false, reportExplicitAny=false
-from __future__ import annotations
-
 import json
 import os
 import posixpath

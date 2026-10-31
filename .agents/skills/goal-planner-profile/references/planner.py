@@ -6,8 +6,6 @@ revision; omitting ``--save`` never writes. ``check`` verifies a saved bundle.
 """
 
 # pyright: reportAny=false, reportUnusedCallResult=false
-from __future__ import annotations
-
 import argparse
 import datetime as dt
 import hashlib

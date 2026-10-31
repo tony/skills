@@ -2,8 +2,6 @@
 
 # ruff: noqa: S101, INP001, D103
 # pyright: reportAny=false, reportUnusedCallResult=false
-from __future__ import annotations
-
 import io
 import json
 import threading

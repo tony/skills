@@ -25,8 +25,6 @@ Exit codes: 0 hits found, 1 no hits, 2 usage error or a path that does not exist
 
 # pyright: reportUnusedCallResult=false
 
-from __future__ import annotations
-
 import json
 import re
 import sys

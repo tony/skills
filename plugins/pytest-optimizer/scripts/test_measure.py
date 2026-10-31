@@ -2,8 +2,6 @@
 
 # ruff: noqa: S101, INP001
 # pyright: reportAny=false, reportUnusedCallResult=false, reportPrivateUsage=false, reportImplicitStringConcatenation=false
-from __future__ import annotations
-
 import json
 import pathlib
 import re

@@ -13,8 +13,6 @@ message passed as arguments, never through a shell.
 
 # ruff: noqa: S603, S607, PLR2004, PLR0911
 # pyright: reportUnusedCallResult=false, reportAny=false, reportImplicitStringConcatenation=false
-from __future__ import annotations
-
 import contextlib
 import json
 import re

@@ -20,8 +20,6 @@ A failing report starts with the counts of the stale categories:
 '⚠ 1 misquoted, 1 moved'
 """
 
-from __future__ import annotations
-
 import argparse
 import json
 import re

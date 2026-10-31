@@ -17,8 +17,6 @@ appears in its argv; otherwise stdin is closed. Output keys: exit_code (null on
 timeout), class, elapsed, stdout, stderr.
 """
 
-from __future__ import annotations
-
 import argparse
 import contextlib
 import hashlib

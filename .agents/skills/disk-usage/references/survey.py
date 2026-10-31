@@ -21,8 +21,6 @@ between directory entries, so one blocked system call can overrun it.
 
 # pyright: reportAny=false
 
-from __future__ import annotations
-
 import argparse
 import json
 import math

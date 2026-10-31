@@ -18,8 +18,6 @@ prerelease above its own final unless ``versionsort.suffix`` is set.
 """
 
 # pyright: reportAny=false, reportExplicitAny=false, reportUnusedCallResult=false
-from __future__ import annotations
-
 import argparse
 import json
 import re

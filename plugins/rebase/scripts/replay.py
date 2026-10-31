@@ -11,8 +11,6 @@ one JSON object. Recovery refs and stashes are never deleted.
 # ruff: noqa: EM101, EM102, TRY003
 # pyright: reportAny=false, reportUnusedCallResult=false
 
-from __future__ import annotations
-
 import argparse
 import fcntl
 import json

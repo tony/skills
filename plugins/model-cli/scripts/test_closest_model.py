@@ -2,8 +2,6 @@
 
 # ruff: noqa: S101, S603, INP001, PLR2004, D103
 # pyright: reportUnusedCallResult=false
-from __future__ import annotations
-
 import doctest
 import importlib.machinery
 import importlib.util

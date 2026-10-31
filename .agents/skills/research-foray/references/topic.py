@@ -11,8 +11,6 @@ export, and check records about a run are still written to it.
 Run ``topic.py <command> --help`` for each command.
 """
 
-from __future__ import annotations
-
 import argparse
 import concurrent.futures
 import contextlib

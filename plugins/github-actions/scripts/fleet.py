@@ -15,8 +15,6 @@ BASE is ``<remote>/<default>``.
 # ruff: noqa: S603, S607, PLR2004, EM101, EM102, TRY003
 # pyright: reportUnusedCallResult=false, reportAny=false, reportExplicitAny=false
 # pyright: reportPrivateUsage=false, reportImplicitOverride=false
-from __future__ import annotations
-
 import json
 import os
 import re

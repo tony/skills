@@ -3,8 +3,6 @@
 # ruff: noqa: S101, INP001, D103, TC003
 # pyright: reportAny=false, reportUnusedCallResult=false
 
-from __future__ import annotations
-
 import os
 from pathlib import Path
 

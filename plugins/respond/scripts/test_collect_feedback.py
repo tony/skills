@@ -2,8 +2,6 @@
 
 # ruff: noqa: S101, INP001, PLR2004
 # pyright: reportAny=false
-from __future__ import annotations
-
 import json
 from typing import TYPE_CHECKING
 

@@ -19,8 +19,6 @@ provider documents no form for that intent, and 2 on bad input.
 'ENG-7'
 """
 
-from __future__ import annotations
-
 import sys
 from urllib.parse import urlsplit, urlunsplit
 

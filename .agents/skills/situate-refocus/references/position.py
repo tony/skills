@@ -19,8 +19,6 @@ Exits 2 with a message on stderr outside a git repository.
 
 # ruff: noqa: S603
 # pyright: reportAny=false, reportUnusedCallResult=false
-from __future__ import annotations
-
 import argparse
 import json
 import os

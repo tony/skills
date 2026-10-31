@@ -13,8 +13,6 @@ CRLF versus LF.
 
 # ruff: noqa: S603, S607, PLR2004
 # pyright: reportUnusedCallResult=false, reportAny=false
-from __future__ import annotations
-
 import json
 import subprocess
 import sys

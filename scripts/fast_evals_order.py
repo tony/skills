@@ -17,8 +17,6 @@ With ``--record SPEC AGGREGATE`` it instead files that run's duration away for
 next time.
 """
 
-from __future__ import annotations
-
 import json
 import os
 import sys

@@ -22,8 +22,6 @@ Untracked build caches (``__pycache__/``, ``.pytest_cache/``, ``.mypy_cache/``,
 # ruff: noqa: EM102, TRY003
 # pyright: reportAny=false, reportUnusedCallResult=false
 
-from __future__ import annotations
-
 import argparse
 import itertools
 import re

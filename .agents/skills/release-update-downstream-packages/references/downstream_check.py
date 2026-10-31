@@ -17,8 +17,6 @@ https://github.com/npm/registry/blob/main/docs/REGISTRY-API.md).
 """
 
 # pyright: reportAny=false, reportUnusedCallResult=false
-from __future__ import annotations
-
 import argparse
 import json
 import re

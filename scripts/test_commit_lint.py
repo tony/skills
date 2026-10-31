@@ -2,8 +2,6 @@
 
 # ruff: noqa: S101, S603, S607, INP001
 # pyright: reportImplicitRelativeImport=false
-from __future__ import annotations
-
 import subprocess
 import typing as t
 

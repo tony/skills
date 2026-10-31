@@ -30,8 +30,6 @@ Test both sources:
     uv run scripts/e2e.py --source both
 """
 
-from __future__ import annotations
-
 import ast
 import json
 import os

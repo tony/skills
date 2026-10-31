@@ -2,8 +2,6 @@
 
 # ruff: noqa: S101, INP001
 # pyright: reportPrivateUsage=false, reportImplicitRelativeImport=false
-from __future__ import annotations
-
 import json
 import typing as t
 

@@ -24,8 +24,6 @@ never takes the title as an argument.
 
 # ruff: noqa: S603, S607
 # pyright: reportAny=false, reportUnusedCallResult=false
-from __future__ import annotations
-
 import argparse
 import hashlib
 import os

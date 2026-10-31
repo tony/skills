@@ -25,8 +25,6 @@ Exits 2 with a message on stderr on a usage or repository error.
 
 # ruff: noqa: S603, S607
 # pyright: reportAny=false, reportUnusedCallResult=false
-from __future__ import annotations
-
 import argparse
 import collections
 import json

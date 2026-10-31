@@ -6,8 +6,6 @@ Runs offline in temp directories; fetches are stubs.
 # ruff: noqa: S101, INP001, PLR2004, D103
 # pyright: reportAny=false, reportUnusedCallResult=false, reportPrivateUsage=false
 
-from __future__ import annotations
-
 import contextlib
 import getpass
 import io

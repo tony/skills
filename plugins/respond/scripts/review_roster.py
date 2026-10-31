@@ -11,8 +11,6 @@ Exit codes: 0 listed (possibly empty), 4 ``gh`` failed (stderr says why).
 """
 
 # pyright: reportAny=false, reportUnusedCallResult=false
-from __future__ import annotations
-
 import argparse
 import json
 import sys

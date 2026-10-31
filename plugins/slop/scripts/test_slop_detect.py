@@ -3,8 +3,6 @@
 # ruff: noqa: S101, S603, S607, INP001, D103, PLR2004, E501
 # pyright: reportAny=false, reportUnusedCallResult=false, reportImplicitStringConcatenation=false
 
-from __future__ import annotations
-
 import json
 import os
 import re

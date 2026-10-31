@@ -19,8 +19,6 @@ Subcommands:
 Run ``business.py <command> --help`` for each command.
 """
 
-from __future__ import annotations
-
 import argparse
 import collections
 import contextlib

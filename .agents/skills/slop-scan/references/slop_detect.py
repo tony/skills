@@ -36,8 +36,6 @@ line counts as added when ``git diff BASE HEAD`` added it; without
 # pyright: reportAny=false, reportExplicitAny=false, reportUnusedCallResult=false
 # pyright: reportUnknownVariableType=false, reportUnknownArgumentType=false
 
-from __future__ import annotations
-
 import argparse
 import json
 import re

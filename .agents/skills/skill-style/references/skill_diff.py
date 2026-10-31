@@ -23,8 +23,6 @@ deletes DIR; it exits 2 and keeps DIR when a file is missing or malformed.
 # ruff: noqa: D103
 # pyright: reportAny=false, reportUnusedCallResult=false
 
-from __future__ import annotations
-
 import argparse
 import difflib
 import json

@@ -23,8 +23,6 @@ Set ``INPUTS`` and implement ``_build_expensive_artifact``, then drop this into 
 ``conftest.py``.
 """
 
-from __future__ import annotations
-
 import hashlib
 import pathlib
 import typing as t

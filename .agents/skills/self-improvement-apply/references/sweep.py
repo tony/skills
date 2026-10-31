@@ -13,8 +13,6 @@ the working tree and ``ledger-verify`` recomputes its key before any edit.
 Run ``sweep.py <command> --help`` for each command.
 """
 
-from __future__ import annotations
-
 import argparse
 import hashlib
 import json

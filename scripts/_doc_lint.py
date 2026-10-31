@@ -6,8 +6,6 @@ which rules fail the build.
 
 # ruff: noqa: INP001
 
-from __future__ import annotations
-
 import re
 import typing as t
 

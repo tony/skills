@@ -1,8 +1,6 @@
 """Tests for sweep.py."""
 
 # ruff: noqa: S101, S603, S607, INP001
-from __future__ import annotations
-
 import json
 import subprocess
 import typing as t

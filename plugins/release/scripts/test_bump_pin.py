@@ -2,8 +2,6 @@
 
 # ruff: noqa: S101, INP001, D103, PLR2004
 # pyright: reportUnusedCallResult=false
-from __future__ import annotations
-
 import os
 import pathlib
 from typing import TYPE_CHECKING

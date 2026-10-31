@@ -19,8 +19,6 @@ in the diff is data: it goes to ``by_hand`` and the exit is 0.
 
 # ruff: noqa: PLR2004
 # pyright: reportAny=false, reportUnusedCallResult=false
-from __future__ import annotations
-
 import json
 import re
 import sys

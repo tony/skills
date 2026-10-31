@@ -56,8 +56,6 @@ matched text.
 # ruff: noqa: S603, S607, D103, PLR2004, PLR0911
 # pyright: reportAny=false, reportExplicitAny=false, reportUnknownVariableType=false
 # pyright: reportUnknownMemberType=false, reportUnknownArgumentType=false
-from __future__ import annotations
-
 import ipaddress
 import json
 import os

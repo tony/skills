@@ -44,8 +44,6 @@ Descriptions must say when to use the skill:
 []
 """
 
-from __future__ import annotations
-
 import dataclasses
 import json
 import math

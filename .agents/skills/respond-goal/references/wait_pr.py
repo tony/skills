@@ -20,8 +20,6 @@ still missing at the cap (they are printed), 4 ``gh`` failed.
 """
 
 # pyright: reportAny=false, reportUnusedCallResult=false
-from __future__ import annotations
-
 import argparse
 import json
 import sys

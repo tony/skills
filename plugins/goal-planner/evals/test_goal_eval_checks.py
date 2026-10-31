@@ -2,8 +2,6 @@
 
 # ruff: noqa: PT009, PT027
 # pyright: reportUnusedCallResult=false
-from __future__ import annotations
-
 import hashlib
 import json
 import re

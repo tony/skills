@@ -10,8 +10,6 @@ Checks every non-merge commit in BASE..HEAD (HEAD defaults to HEAD). Prints one
 line per problem and exits 1 when there is any.
 """
 
-from __future__ import annotations
-
 import re
 import subprocess
 import sys

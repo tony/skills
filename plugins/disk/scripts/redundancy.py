@@ -15,8 +15,6 @@ or one tree inside the other is also INCONCLUSIVE: it proves nothing.
 
 # pyright: reportAny=false
 
-from __future__ import annotations
-
 import hashlib
 import os
 import stat

@@ -12,8 +12,6 @@ Run ``isolate.py <command> --help`` for arguments.
 """
 
 # pyright: reportAny=false, reportExplicitAny=false, reportUnusedCallResult=false
-from __future__ import annotations
-
 import argparse
 import hashlib
 import itertools

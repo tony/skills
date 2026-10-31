@@ -18,8 +18,6 @@ filesystem's observed free-space delta, without attributing its cause.
 
 # pyright: reportAny=false, reportUnusedCallResult=false
 
-from __future__ import annotations
-
 import argparse
 import contextlib
 import os

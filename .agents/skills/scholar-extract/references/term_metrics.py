@@ -174,8 +174,6 @@ needs no citation of its own, since its is-a claims are cited in
 ["a: source 'z' is not in sources.jsonl"]
 """
 
-from __future__ import annotations
-
 import argparse
 import hashlib
 import json

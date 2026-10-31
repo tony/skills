@@ -7,8 +7,6 @@ https remote through git's url.<base>.insteadOf rewrite.
 # ruff: noqa: S101, S603, INP001, D101, D102, D103, D105, ARG001, PLR2004, SLF001, EM101, ANN401, PYI034
 # pyright: reportAny=false, reportUnusedCallResult=false, reportUnusedParameter=false, reportImplicitStringConcatenation=false, reportPrivateUsage=false, reportPrivateLocalImportUsage=false, reportUnannotatedClassAttribute=false
 
-from __future__ import annotations
-
 import gzip
 import io
 import json

@@ -14,8 +14,6 @@ when a path matches no file, or when nothing changed.
 
 # ruff: noqa: S603
 # pyright: reportAny=false, reportUnusedCallResult=false
-from __future__ import annotations
-
 import argparse
 import os
 import re

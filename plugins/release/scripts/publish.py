@@ -22,8 +22,6 @@ A refusal or failed push changes no remote ref this script did not name.
 """
 
 # pyright: reportAny=false, reportUnusedCallResult=false
-from __future__ import annotations
-
 import argparse
 import contextlib
 import json

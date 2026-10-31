@@ -9,8 +9,6 @@ has a name and shell command, run from the isolated repository root.
 # ruff: noqa: EM101, TRY003
 # pyright: reportAny=false, reportExplicitAny=false, reportUnusedCallResult=false
 
-from __future__ import annotations
-
 import argparse
 import json
 import os

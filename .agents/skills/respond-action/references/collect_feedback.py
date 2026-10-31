@@ -20,8 +20,6 @@ so a failed read never passes for empty feedback).
 """
 
 # pyright: reportAny=false, reportExplicitAny=false, reportUnusedCallResult=false
-from __future__ import annotations
-
 import argparse
 import json
 import re

@@ -2,8 +2,6 @@
 
 # ruff: noqa: S101, INP001, SLF001
 # pyright: reportPrivateUsage=false, reportImplicitRelativeImport=false
-from __future__ import annotations
-
 import typing as t
 
 import marketplace

@@ -2,8 +2,6 @@
 
 # ruff: noqa: S101, S603, S607, INP001, SLF001, PLR2004
 # pyright: reportAny=false, reportUnusedCallResult=false
-from __future__ import annotations
-
 import subprocess
 from typing import TYPE_CHECKING, cast
 

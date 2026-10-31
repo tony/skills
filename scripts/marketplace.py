@@ -14,8 +14,6 @@ Validates marketplace manifests, plugin structures, and skill frontmatter.
 Syncs the marketplace manifest with discovered plugin directories.
 """
 
-from __future__ import annotations
-
 import ast
 import concurrent.futures
 import json

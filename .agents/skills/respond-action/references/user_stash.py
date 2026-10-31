@@ -18,8 +18,6 @@ exactly the stash's (none, without a SHA).
 
 # ruff: noqa: S603, S607
 # pyright: reportUnusedCallResult=false
-from __future__ import annotations
-
 import json
 import subprocess
 import sys

@@ -30,8 +30,6 @@ case-insensitively, for providers that convert on write.
 ['hi', 'there', 'link', 'https', 'x', 'io']
 """
 
-from __future__ import annotations
-
 import difflib
 import html
 import json

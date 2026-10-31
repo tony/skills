@@ -34,8 +34,6 @@ when the release or a matching file is missing.
 
 # ruff: noqa: S603, S607
 # pyright: reportAny=false, reportExplicitAny=false, reportUnusedCallResult=false
-from __future__ import annotations
-
 import argparse
 import fnmatch
 import json

@@ -6,8 +6,6 @@ Runs offline in temp directories; no network.
 # ruff: noqa: S101, INP001, PLR2004, D101, D102, D103, D105
 # pyright: reportAny=false, reportUnusedCallResult=false, reportPrivateUsage=false
 
-from __future__ import annotations
-
 import contextlib
 import io
 import json

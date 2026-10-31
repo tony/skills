@@ -27,8 +27,6 @@ check-to-rename window are not guarded.
 
 # ruff: noqa: EM101, TRY003, PLR2004
 # pyright: reportAny=false, reportUnusedCallResult=false
-from __future__ import annotations
-
 import contextlib
 import importlib
 import json

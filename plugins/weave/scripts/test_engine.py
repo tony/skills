@@ -2,8 +2,6 @@
 
 # ruff: noqa: S101, S603, INP001, PLR2004, D103, ARG001, PT018
 # pyright: reportAny=false, reportUnusedParameter=false, reportUnusedCallResult=false
-from __future__ import annotations
-
 import io
 import json
 import os

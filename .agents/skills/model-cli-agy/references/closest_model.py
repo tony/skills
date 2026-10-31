@@ -35,8 +35,6 @@ True
 'Gemini 3.1 Pro (High)'
 """
 
-from __future__ import annotations
-
 import argparse
 import re
 import sys

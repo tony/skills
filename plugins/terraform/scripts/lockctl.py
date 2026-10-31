@@ -23,8 +23,6 @@ diff       compare two locks provider by provider; BEFORE and AFTER are
            permits every provider's version to move.
 """
 
-from __future__ import annotations
-
 import os
 import re
 import subprocess

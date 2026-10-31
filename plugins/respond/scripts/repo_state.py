@@ -19,8 +19,6 @@ repository is rooted at the home directory, 4 ``gh`` failed.
 
 # ruff: noqa: S603, S607
 # pyright: reportAny=false, reportUnusedCallResult=false
-from __future__ import annotations
-
 import argparse
 import hashlib
 import json

@@ -17,8 +17,6 @@ owner '..' is not a GitHub owner name
 0
 """
 
-from __future__ import annotations
-
 import argparse
 import hashlib
 import json

@@ -18,8 +18,6 @@ never trusted. A failed apply leaves the entry in place and exits 1.
 # ruff: noqa: EM102, TRY003
 # pyright: reportAny=false, reportUnusedCallResult=false
 
-from __future__ import annotations
-
 import re
 import subprocess
 import sys

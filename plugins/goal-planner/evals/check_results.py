@@ -1,7 +1,5 @@
 """Supplement native eval grades with exact output and retained-artifact checks."""
 
-from __future__ import annotations
-
 import argparse
 import hashlib
 import json

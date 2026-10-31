@@ -2,8 +2,6 @@
 
 # ruff: noqa: S101, INP001, PLR2004
 # pyright: reportAny=false, reportUnusedCallResult=false, reportPrivateUsage=false
-from __future__ import annotations
-
 import hashlib
 import json
 import subprocess

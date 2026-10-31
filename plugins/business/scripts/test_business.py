@@ -4,8 +4,6 @@
 # pyright: reportAny=false, reportUnusedCallResult=false, reportPrivateUsage=false
 # pyright: reportImplicitStringConcatenation=false, reportUnusedParameter=false
 
-from __future__ import annotations
-
 import io
 import json
 import re

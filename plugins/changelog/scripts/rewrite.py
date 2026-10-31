@@ -17,8 +17,6 @@ exits 1. File paths are relative to the repository root.
 # ruff: noqa: EM101, EM102, TRY003, PTH100
 # pyright: reportAny=false, reportUnusedCallResult=false
 
-from __future__ import annotations
-
 import argparse
 import datetime as dt
 import json

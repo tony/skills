@@ -31,8 +31,6 @@ as absent or unchanged. A file missing from ``HEAD`` is ``{"new": true}``.
 
 # ruff: noqa: S603, S607, PLR2004
 # pyright: reportAny=false, reportUnusedCallResult=false
-from __future__ import annotations
-
 import json
 import os
 import re

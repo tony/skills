@@ -3,8 +3,6 @@
 # ruff: noqa: S101, S603, S607, PLR2004, INP001, D103
 # pyright: reportAny=false, reportUnusedCallResult=false
 
-from __future__ import annotations
-
 import re
 import shlex
 import subprocess

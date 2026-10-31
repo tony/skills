@@ -5,8 +5,6 @@ message is the tool's own stderr.
 """
 
 # ruff: noqa: S603, INP001
-from __future__ import annotations
-
 import json
 import subprocess
 from typing import TYPE_CHECKING

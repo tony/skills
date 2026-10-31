@@ -12,8 +12,6 @@ capture, adopt, commit, guard, stash-restore, update.
 """
 
 # pyright: reportAny=false, reportExplicitAny=false, reportUnusedCallResult=false
-from __future__ import annotations
-
 import argparse
 import concurrent.futures
 import contextlib

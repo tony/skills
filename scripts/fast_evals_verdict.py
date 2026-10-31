@@ -10,8 +10,6 @@ keeps a broken route green. An interrupted run also writes an aggregate, and
 reusing that verdict reports a suite green on grading that never finished.
 """
 
-from __future__ import annotations
-
 import json
 import os
 import sys
