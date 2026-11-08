@@ -1,9 +1,8 @@
 ---
 name: situate
-description: "Use when the user asks to get oriented or caught up on a branch, its pull request, tickets, and conventions before touching anything."
+description: "Use when asked to situate yourself: sweep a branch, its tickets, CI checks, and conventions layer by layer, read-only."
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "AskUserQuestion"]
 argument-hint: "[<pr-number|url>] [--with-agentgrep [terms]]"
-disable-model-invocation: true
 ---
 
 

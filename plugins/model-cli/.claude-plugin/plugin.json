@@ -1,7 +1,7 @@
 {
   "name": "model-cli",
   "description": "Run a prompt through one AI CLI at a time: agy (Gemini), codex (GPT), or cursor's agent, with fallback between tiers.",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "author": {
     "name": "Tony Narlock",
     "email": "tony@git-pull.com"

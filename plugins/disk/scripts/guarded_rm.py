@@ -16,10 +16,6 @@ the tree are unlinked, never followed. A completed deletion reports the
 filesystem's observed free-space delta, without attributing its cause.
 """
 
-# pyright: reportAny=false, reportUnusedCallResult=false
-
-from __future__ import annotations
-
 import argparse
 import contextlib
 import os
@@ -147,7 +143,7 @@ def _open_file_refusal(target: str) -> str | None:
         result = subprocess.run(  # noqa: S603
             command, capture_output=True, timeout=LSOF_TIMEOUT, check=False
         )
-    except (OSError, subprocess.TimeoutExpired):
+    except OSError, subprocess.TimeoutExpired:
         return "open-handle inspection failed or was incomplete"
     if result.stderr or result.returncode not in (0, 1):
         return "open-handle inspection failed or was incomplete"

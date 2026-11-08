@@ -1,0 +1,33 @@
+{
+  "skill_name": "what",
+  "trigger": {
+    "positive": [
+      {
+        "prompt": "give me a five-line recap of this session",
+        "top_k": 1
+      },
+      {
+        "prompt": "recap where this branch and its ticket stand",
+        "top_k": 1
+      },
+      {
+        "prompt": "I'm lost; recap the session and my next options",
+        "top_k": 1
+      }
+    ],
+    "negative": [
+      {
+        "prompt": "wait, what?",
+        "owner": "brief"
+      },
+      {
+        "prompt": "bring me up to speed on this repo before I change anything",
+        "owner": "situational-awareness"
+      },
+      {
+        "prompt": "refocus this branch on what the issue asked for",
+        "owner": "refocus"
+      }
+    ]
+  }
+}

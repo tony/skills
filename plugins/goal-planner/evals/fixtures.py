@@ -1,7 +1,5 @@
 """Build synthetic, local-only inputs for the goal planner evals."""
 
-from __future__ import annotations
-
 import sys
 from pathlib import Path
 

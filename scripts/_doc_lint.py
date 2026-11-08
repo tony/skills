@@ -6,15 +6,13 @@ which rules fail the build.
 
 # ruff: noqa: INP001
 
-from __future__ import annotations
-
 import re
 import typing as t
 
 if t.TYPE_CHECKING:
     import collections.abc as cabc
 
-Violation = tuple[str, int, str]
+type Violation = tuple[str, int, str]
 
 SHELL_TAGS = frozenset({"bash", "sh", "shell", "zsh"})
 TOOL_PLUGINS = frozenset({"pytest-optimizer", "ruff", "tailwind", "terraform"})
@@ -81,7 +79,8 @@ def fences(text: str) -> list[Fence]:
         match = _FENCE_RE.match(line)
         if marker is None:
             if match:
-                marker, tag, start, body = match.group(2), match.group(3).lower(), number + 1, []
+                marker, tag, start = str(match.group(2)), str(match.group(3)).lower(), number + 1
+                body = []
                 indent, before = len(match.group(1)), last
             elif line.strip():
                 last = line.strip()
@@ -109,7 +108,7 @@ def _outside_heredocs(lines: list[str]) -> cabc.Iterator[tuple[int, str]]:
         yield index, line
         found = _HEREDOC_RE.search(line)
         if found:
-            terminator = found.group(1)
+            terminator = str(found.group(1))
 
 
 def check_user_invocable(text: str) -> list[Violation]:
@@ -284,7 +283,8 @@ def _logical_lines(lines: list[str]) -> list[tuple[int, str]]:
             continue
         parts.append(line)
         out.append((start, " ".join(parts)))
-        start, parts = None, []
+        start = None
+        parts = []
     if start is not None:
         out.append((start, " ".join(parts)))
     return out
@@ -356,7 +356,7 @@ def check_one_command(text: str) -> list[Violation]:
 
 
 COMMENT_RUN_MAX = 3
-_PRAGMA_RE = re.compile(r"noqa|type:|pyright:|SPDX|[Cc]opyright|[Ll]icen[sc]e")
+_PRAGMA_RE = re.compile(r"noqa|type:|\bty:|pyright:|SPDX|[Cc]opyright|[Ll]icen[sc]e")
 
 
 def check_comment_runs(text: str) -> list[Violation]:
@@ -371,6 +371,8 @@ def check_comment_runs(text: str) -> list[Violation]:
     []
     >>> check_comment_runs("# a\n# b\n# c\n# d\nx = 1\n")
     [('comment-run', 1, 'comment run of 4 lines; keep the constraint, cut the rest')]
+    >>> check_comment_runs("# a\n# b\n# c\n# ty: ignore[x]\n# d\n")
+    []
     >>> check_comment_runs("#!/bin/sh\n# /// script\n# a\n# b\n# c\n# d\n# ///\n")
     []
     """

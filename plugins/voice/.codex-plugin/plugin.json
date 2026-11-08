@@ -1,0 +1,28 @@
+{
+  "name": "voice",
+  "version": "0.1.0",
+  "description": "Write or rephrase copy for the reader who will use it, from a brief of who they are, what they came to do, where it renders, when they arrive, and why it matters.",
+  "author": {
+    "name": "Tony Narlock",
+    "email": "tony@git-pull.com"
+  },
+  "homepage": "https://github.com/tony/skills/tree/main/plugins/voice",
+  "repository": "https://github.com/tony/skills",
+  "license": "MIT",
+  "keywords": [
+    "writing",
+    "rephrase",
+    "reader",
+    "audience",
+    "voice"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Voice",
+    "shortDescription": "Write or rephrase copy for the reader who will use it, from a brief of who they are, what they came to do, where it renders, when they arrive, and why it matters.",
+    "longDescription": "Write or rephrase copy for the reader who will use it, from a brief of who they are, what they came to do, where it renders, when they arrive, and why it matters.",
+    "developerName": "Tony Narlock",
+    "category": "Productivity",
+    "websiteURL": "https://github.com/tony/skills/tree/main/plugins/voice"
+  }
+}

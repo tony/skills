@@ -19,16 +19,14 @@ Exit codes: 0 collected, 4 ``gh`` failed (stderr says why; nothing is printed,
 so a failed read never passes for empty feedback).
 """
 
-# pyright: reportAny=false, reportExplicitAny=false, reportUnusedCallResult=false
-from __future__ import annotations
-
 import argparse
+import asyncio
 import json
 import re
 import sys
 from typing import Any
 
-import ghcli  # pyright: ignore[reportImplicitRelativeImport]
+import ghcli
 
 GhError = ghcli.GhError
 gh = ghcli.gh
@@ -92,35 +90,59 @@ def normalize_thread(node: dict[str, Any]) -> dict[str, Any]:
 
 def collect(pr: str, *, include_resolved: bool) -> dict[str, object]:
     """Return the normalized feedback for ``pr``."""
+    return asyncio.run(_collect(pr, include_resolved=include_resolved))
+
+
+async def _collect(pr: str, *, include_resolved: bool) -> dict[str, object]:
     number = pr if pr.isdigit() else _number(pr)
     pull = f"repos/{{owner}}/{{repo}}/pulls/{number}"
     repo = gh("repo", "view", "--json", "owner,name", "--jq", '.owner.login + " " + .name').split()
-    threads = _lines(
-        gh(
-            "api", "graphql", "--paginate",
-            "-F", f"owner={repo[0]}", "-F", f"repo={repo[1]}", "-F", f"number={number}",
-            "-f", f"query={_THREADS_QUERY}", "--jq", _THREAD_NODES,
+
+    def read_threads() -> list[dict[str, object]]:
+        return _lines(
+            gh(
+                "api", "graphql", "--paginate",
+                "-F", f"owner={repo[0]}", "-F", f"repo={repo[1]}", "-F", f"number={number}",
+                "-f", f"query={_THREADS_QUERY}", "--jq", _THREAD_NODES,
+            )
+        )  # fmt: skip
+
+    async with ghcli.task_group() as group:
+        threads = group.create_task(asyncio.to_thread(read_threads))
+        checks = group.create_task(
+            asyncio.to_thread(ghcli.pr_checks, number, "name,bucket,link", gh)
         )
-    )  # fmt: skip
+        reviews = group.create_task(
+            asyncio.to_thread(_rest, f"{pull}/reviews", "id, state, body, commit: .commit_id")
+        )
+        comments = group.create_task(
+            asyncio.to_thread(
+                _rest,
+                f"repos/{{owner}}/{{repo}}/issues/{number}/comments",
+                "id, body, at: .created_at",
+            )
+        )
+        inline = group.create_task(
+            asyncio.to_thread(
+                _rest,
+                f"{pull}/comments",
+                "id, body, path, commit: .commit_id, at: .created_at, reply_to: .in_reply_to_id",
+            )
+        )
     kept = [
         normalize_thread(t)
-        for t in threads
+        for t in threads.result()
         if include_resolved or not (t["isResolved"] or t["isOutdated"])
     ]
     failing = [
         {**c, "run": (re.search(r"/runs/(\d+)", str(c.get("link", ""))) or [None, ""])[1]}
-        for c in ghcli.pr_checks(number, "name,bucket,link", gh)
+        for c in checks.result()
         if c.get("bucket") in {"fail", "cancel"}
     ]
     return {
-        "reviews": _rest(f"{pull}/reviews", "id, state, body, commit: .commit_id"),
-        "comments": _rest(
-            f"repos/{{owner}}/{{repo}}/issues/{number}/comments", "id, body, at: .created_at"
-        ),
-        "inline": _rest(
-            f"{pull}/comments",
-            "id, body, path, commit: .commit_id, at: .created_at, reply_to: .in_reply_to_id",
-        ),
+        "reviews": reviews.result(),
+        "comments": comments.result(),
+        "inline": inline.result(),
         "threads": kept,
         "failing_checks": failing,
     }
@@ -129,7 +151,7 @@ def collect(pr: str, *, include_resolved: bool) -> dict[str, object]:
 def _number(ref: str) -> str:
     found = re.search(r"/pull/(\d+)", ref)
     if found:
-        return found.group(1)
+        return str(found.group(1))
     return gh("pr", "view", "--json", "number", "--jq", ".number").strip()
 
 

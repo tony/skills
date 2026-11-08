@@ -5,9 +5,6 @@ Every command emits JSON. ``render --input draft.json --save`` publishes a
 revision; omitting ``--save`` never writes. ``check`` verifies a saved bundle.
 """
 
-# pyright: reportAny=false, reportUnusedCallResult=false
-from __future__ import annotations
-
 import argparse
 import datetime as dt
 import hashlib
@@ -214,7 +211,7 @@ def parse_request(value: dict[str, object]) -> Draft:
     spec = None if specification is None else _string(specification, "specification")
     if body.count(_PLACEHOLDER) != int(spec is not None):
         _fail("A specification requires exactly one {{GOAL_SPEC}} token; omit it otherwise")
-    local_date = dt.datetime.now(dt.timezone.utc).astimezone().date().isoformat()
+    local_date = dt.datetime.now(dt.UTC).astimezone().date().isoformat()
     date = _string(value.get("date", local_date), "date")
     if not _DATE.fullmatch(date):
         _fail("date must use YYYY-MM-DD")

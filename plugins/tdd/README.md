@@ -74,6 +74,6 @@ Adapts dynamically based on `AGENTS.md` / `CLAUDE.md`:
 ## Prerequisites
 
 - git, for the commits.
-- python3 (3.9 or newer), for the diff-gate script.
+- python3 (3.14 or newer), for the diff-gate script.
 - A supported test framework.
 - Quality gate commands listed in the project's AGENTS.md or CLAUDE.md.

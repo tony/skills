@@ -30,9 +30,6 @@ as absent or unchanged. A file missing from ``HEAD`` is ``{"new": true}``.
 """
 
 # ruff: noqa: S603, S607, PLR2004
-# pyright: reportAny=false, reportUnusedCallResult=false
-from __future__ import annotations
-
 import json
 import os
 import re
@@ -77,7 +74,7 @@ def _default_branch(repo: str, remote: str) -> str | None:
         return out.removeprefix(prefix)
     code, out = _git(repo, "ls-remote", "--symref", remote, "HEAD")
     match = re.search(r"^ref: refs/heads/(\S+)\s+HEAD", out, re.MULTILINE)
-    return match.group(1) if code == 0 and match else None
+    return str(match.group(1)) if code == 0 and match else None
 
 
 PRESENT, ABSENT, FAILED = "present", "absent", "failed"
@@ -194,7 +191,7 @@ def _mise(text: str) -> dict[str, object] | None:
 def _rust_channel(text: str) -> str | None:
     if text.lstrip().startswith("["):
         match = re.search(r"""^\s*channel\s*=\s*(["'])([^"'\r\n]+)\1""", text, re.MULTILINE)
-        return match.group(2) if match else None
+        return str(match.group(2)) if match else None
     return _first_line(text)
 
 
@@ -468,7 +465,7 @@ def _diff_files(
             continue
         try:
             new = (Path(repo) / name).read_text()
-        except (OSError, UnicodeError):
+        except OSError, UnicodeError:
             out[name] = {"error": "not readable"}
             continue
         if state == ABSENT:

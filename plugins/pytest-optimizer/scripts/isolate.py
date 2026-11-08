@@ -11,11 +11,9 @@ Commands: inputs, stale, exists, start, finish, reset, capture, apply, gate, lan
 Run ``isolate.py <command> --help`` for arguments.
 """
 
-# pyright: reportAny=false, reportExplicitAny=false, reportUnusedCallResult=false
-from __future__ import annotations
-
 import argparse
 import hashlib
+import itertools
 import json
 import os
 import pathlib
@@ -77,7 +75,7 @@ def owner_of(tree: pathlib.Path) -> tuple[dict[str, t.Any] | None, str]:
         return None, "not a scratch worktree this tool created"
     try:
         record = json.loads(marker.read_text(encoding="utf-8"))
-    except (OSError, ValueError):
+    except OSError, ValueError:
         return None, "ownership record unreadable"
     if pathlib.Path(str(record.get("tree"))).resolve() != tree or _toplevel(tree) != tree:
         return None, "ownership record does not match this worktree"
@@ -244,7 +242,7 @@ def finish(scratch: pathlib.Path, drop_branch_at: str | None = None) -> dict[str
         return {"removed": False, "reason": "not a scratch directory this tool created"}
     try:
         record = json.loads(marker.read_text(encoding="utf-8"))
-    except (OSError, ValueError):
+    except OSError, ValueError:
         return {"removed": False, "reason": "ownership record unreadable"}
     if tree.exists() and not record.get("export"):
         proc = _git(record["repo"], "worktree", "remove", "--force", str(tree))
@@ -392,7 +390,7 @@ def landed(tree: pathlib.Path, parent: str, tree_sha: str) -> dict[str, t.Any]:
 def _load(path: pathlib.Path) -> object:
     try:
         return json.loads(path.read_text(encoding="utf-8"))
-    except (OSError, ValueError):
+    except OSError, ValueError:
         return None
 
 
@@ -510,7 +508,7 @@ def exists(
     created: set[str] = set()
     if patch is not None:
         lines = patch.read_bytes().decode("utf-8", "replace").splitlines()
-        for before, after in zip(lines, lines[1:]):
+        for before, after in itertools.pairwise(lines):
             if before == "--- /dev/null" and after.startswith("+++ b/"):
                 created.add(after[len("+++ b/") :])
     missing = [

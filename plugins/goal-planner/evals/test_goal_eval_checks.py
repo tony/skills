@@ -1,27 +1,30 @@
 """Fast corruption controls for the native eval postcheck; no model calls."""
 
 # ruff: noqa: PT009, PT027
-# pyright: reportUnusedCallResult=false
-from __future__ import annotations
-
 import hashlib
 import json
 import re
 import tempfile
 import unittest
 from pathlib import Path
+from typing import override
 
 if __package__:
-    from .check_results import EvalError, check_case, check_report, goal_payload
-    from .fixtures import files_for, source_body
-else:
-    from check_results import (  # pyright: ignore[reportImplicitRelativeImport]
+    from .check_results import (  # ty: ignore[unresolved-import]
         EvalError,
         check_case,
         check_report,
         goal_payload,
     )
-    from fixtures import files_for, source_body  # pyright: ignore[reportImplicitRelativeImport]
+    from .fixtures import files_for, source_body  # ty: ignore[unresolved-import]
+else:
+    from check_results import (
+        EvalError,
+        check_case,
+        check_report,
+        goal_payload,
+    )
+    from fixtures import files_for, source_body
 
 
 def _reply(payload: str) -> str:
@@ -90,9 +93,10 @@ def _renders(
 class GoalEvalChecksTest(unittest.TestCase):
     """Reject damaged outputs and false completion while allowing intact evidence."""
 
-    root: Path  # pyright: ignore[reportUninitializedInstanceVariable]
+    root: Path
 
-    def setUp(self) -> None:  # pyright: ignore[reportImplicitOverride]
+    @override
+    def setUp(self) -> None:
         """Create an owned fixture for each test."""
         temporary = tempfile.TemporaryDirectory()
         self.addCleanup(temporary.cleanup)
@@ -183,7 +187,7 @@ class GoalEvalChecksTest(unittest.TestCase):
             "printf fabricated-json",
             "python3 -c 'import planner; planner._candidate()'",
         ):
-            echoed = [*events]
+            echoed: list[dict[str, object]] = [*events]
             echoed[1] = {
                 "type": "assistant",
                 "message": {
@@ -199,12 +203,12 @@ class GoalEvalChecksTest(unittest.TestCase):
             }
             with self.subTest(command=command), self.assertRaises(EvalError):
                 check_case(case, self.root, _reply(payload), echoed)
-        for override, tool_error in (
+        for patch, tool_error in (
             ({"reused": False}, False),
             ({"requested_date": "2030-01-02"}, False),
             ({}, True),
         ):
-            false_reuse = [*events]
+            false_reuse: list[dict[str, object]] = [*events]
             false_reuse[-1] = {
                 "type": "user",
                 "message": {
@@ -220,7 +224,7 @@ class GoalEvalChecksTest(unittest.TestCase):
                                     "payload": payload,
                                     "goal_path": str(goal),
                                     "requested_date": "2030-01-03",
-                                    **override,
+                                    **patch,
                                 }
                             ),
                         }
@@ -228,7 +232,7 @@ class GoalEvalChecksTest(unittest.TestCase):
                 },
             }
             with (
-                self.subTest(override=override, tool_error=tool_error),
+                self.subTest(patch=patch, tool_error=tool_error),
                 self.assertRaises(EvalError),
             ):
                 check_case(case, self.root, _reply(payload), false_reuse)
@@ -290,7 +294,7 @@ class GoalEvalChecksTest(unittest.TestCase):
         with self.assertRaises(EvalError):
             check_case(case, self.root, mismatched, events)
         request.write_text(original_request, encoding="utf-8")
-        budget_failure = [*events]
+        budget_failure: list[dict[str, object]] = [*events]
         budget_failure[-1] = {
             "type": "user",
             "message": {

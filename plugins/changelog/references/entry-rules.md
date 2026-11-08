@@ -186,7 +186,8 @@ presenting; never present it with a blank.
 
 A `Target` that names anything but the unreleased section means the user
 explicitly asked for a release. Otherwise stop and re-read the branch-scope
-rules.
+rules. The `Target` of a final's section names the prerelease sections it
+replaces.
 
 ## Notes
 
@@ -202,6 +203,9 @@ template is cut. `Notes` holds only these bullets, each stated once:
 - A retained mixed commit: its subject and that it also changes code, nothing
   about its changelog lines.
 - The backup branch and the push command, for a rewrite.
+- A final not cut yet, per `branch-scope.md`: "0.1.1 is not final yet; its
+  section must replace the 0.1.1-alpha sections with the net change since
+  0.1.0."
 
 Everything else is cut: advice ("you may want"), citations of rules, checks
 that passed, critique or description of old entries, and the reason a heading

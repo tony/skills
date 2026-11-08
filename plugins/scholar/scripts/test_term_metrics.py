@@ -1,9 +1,6 @@
 """Tests for term_metrics.py malformed-row and URL handling."""
 
 # ruff: noqa: S101, INP001, PLR2004
-# pyright: reportAny=false, reportUnusedCallResult=false, reportPrivateUsage=false
-from __future__ import annotations
-
 import hashlib
 import json
 import subprocess
@@ -11,7 +8,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 import pytest
-import term_metrics  # pyright: ignore[reportImplicitRelativeImport]
+import term_metrics
 
 if TYPE_CHECKING:
     from collections.abc import Mapping
@@ -206,7 +203,7 @@ def test_check_quotes_against_a_local_clone(
     code = term_metrics.main([str(study), "--check-quotes", str(clone)])
     out = capsys.readouterr().out.splitlines()
     assert code == (1 if expected else 0)
-    assert [line[: len(exp)] for line, exp in zip(out, expected)] == expected
+    assert [line[: len(exp)] for line, exp in zip(out, expected, strict=False)] == expected
     assert len(out) == len(expected)
 
 

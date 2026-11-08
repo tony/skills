@@ -19,15 +19,13 @@ Exit codes of ``agents``: 0 every named login weighed in, 2 some logins were
 still missing at the cap (they are printed), 4 ``gh`` failed.
 """
 
-# pyright: reportAny=false, reportUnusedCallResult=false
-from __future__ import annotations
-
 import argparse
+import asyncio
 import json
 import sys
 import time
 
-import ghcli  # pyright: ignore[reportImplicitRelativeImport]
+import ghcli
 
 GhError = ghcli.GhError
 _gh = ghcli.gh
@@ -133,17 +131,24 @@ def _wait_agents(args: argparse.Namespace) -> int:
     pull = f"repos/{{owner}}/{{repo}}/pulls/{args.pr}"
     issue = f"repos/{{owner}}/{{repo}}/issues/{args.pr}/comments"
     while True:
-        reviews = _lines(
-            _gh("api", f"{pull}/reviews", "--paginate", "-q",
-                ".[] | {login: .user.login, commit: .commit_id}")
-        )  # fmt: skip
-        comments = _lines(
-            _gh("api", issue, "--paginate", "-q",
-                ".[] | {login: .user.login, at: .created_at}")
-        )  # fmt: skip
-        inline = _lines(
-            _gh("api", f"{pull}/comments", "--paginate", "-q",
-                ".[] | {login: .user.login, commit: .commit_id, at: .created_at}")
+        reviews, comments, inline = asyncio.run(
+            ghcli.gather(
+                [
+                    lambda: _lines(
+                        _gh("api", f"{pull}/reviews", "--paginate", "-q",
+                            ".[] | {login: .user.login, commit: .commit_id}")
+                    ),
+                    lambda: _lines(
+                        _gh("api", issue, "--paginate", "-q",
+                            ".[] | {login: .user.login, at: .created_at}")
+                    ),
+                    lambda: _lines(
+                        _gh("api", f"{pull}/comments", "--paginate", "-q",
+                            ".[] | {login: .user.login, commit: .commit_id, at: .created_at}")
+                    ),
+                ],
+                limit=3,
+            )
         )  # fmt: skip
         missing = missing_agents(
             args.agents, reviews + inline, comments + inline, args.sha, args.since

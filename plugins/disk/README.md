@@ -70,7 +70,7 @@ The `disk` skill triggers either flow automatically under disk pressure.
 
 ## Prerequisites
 
-- `df`, `du`, `find`, `findmnt` (Linux), `git`, `python3` (3.9 or newer),
+- `df`, `du`, `find`, `findmnt` (Linux), `git`, `python3` (3.14 or newer),
   `realpath`, `rsync` (additive merge), and
   `lsof` (open-file check before deleting; any warning refuses removal)
 - WSL only: GNU `find` and `numfmt` (backing-file size) and `fstrim`

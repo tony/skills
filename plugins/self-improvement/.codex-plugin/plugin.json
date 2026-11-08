@@ -1,6 +1,6 @@
 {
   "name": "self-improvement",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Mine local agent prompt history for how the skill catalog is really used, then land the changes that usage evidence supports.",
   "author": {
     "name": "Tony Narlock",

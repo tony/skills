@@ -1,14 +1,11 @@
 """Tests for review_roster.py with ``gh`` replaced by canned output."""
 
-# pyright: reportAny=false
 # ruff: noqa: S101, INP001, PLR2004
-from __future__ import annotations
-
 import json
 from typing import TYPE_CHECKING
 
-import review_roster  # pyright: ignore[reportImplicitRelativeImport]
-from ghcli import GhError  # pyright: ignore[reportImplicitRelativeImport]
+import review_roster
+from ghcli import GhError
 
 if TYPE_CHECKING:
     import pytest

@@ -1,6 +1,6 @@
 {
   "name": "skill-style",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Hold SKILL.md files to a deletion test: a line stays only when removing it would change what the agent does. Frontmatter, code blocks, and sections survive verbatim.",
   "author": {
     "name": "Tony Narlock",

@@ -31,9 +31,7 @@ github.com host independently of the working directory and host environment.
 """
 
 # ruff: noqa: S603, S607, PLR2004, PLR0911, TRY003, EM102
-# pyright: reportUnusedCallResult=false, reportAny=false, reportExplicitAny=false
-from __future__ import annotations
-
+import asyncio
 import json
 import os
 import posixpath
@@ -94,7 +92,7 @@ class Scalar(str):  # noqa: SLOT000
 
 
 Node = Any
-Row = tuple[int, str, int]
+type Row = tuple[int, str, int]
 
 
 def _quoted_end(text: str, start: int) -> int:
@@ -530,7 +528,7 @@ def pin_version(ref: str, note: str) -> str:
     if REF_VERSION.match(ref):
         return ref.removeprefix("v")
     m = VERSION.match(note.strip())
-    return m.group(1) if m else ""
+    return str(m.group(1)) if m else ""
 
 
 def _pin(raw: str, note: str, line: int) -> dict[str, str]:
@@ -620,7 +618,7 @@ def _parts(version: str) -> tuple[list[int], str]:
     m = ANY_VERSION.match(version)
     if not m:
         raise SystemExit(f"not a version: {version}")
-    return [int(g) for g in m.groups()[:3] if g is not None], m.group("pre") or ""
+    return [int(g) for g in m.groups()[:3] if g is not None], str(m.group("pre") or "")
 
 
 def tag_parts(tag: str) -> list[int] | None:
@@ -713,7 +711,7 @@ def _github_slug(url: str) -> str | None:
     slug = path.removesuffix("/").removesuffix(".git")
     if not SLUG.fullmatch(slug) or any(part in {".", ".."} for part in slug.split("/")):
         return None
-    return slug
+    return str(slug)
 
 
 def _slug_from_remote(path: str, remote: str) -> str:
@@ -731,7 +729,7 @@ def _default_branch(slug: str) -> str:
     ).strip()  # fmt: skip
 
 
-Fetch = Callable[[str], "str | None"]
+type Fetch = Callable[[str], str | None]
 
 
 def _local_files(raw: str) -> list[str] | None:
@@ -889,15 +887,40 @@ def _read_slug(slug: str, default: str) -> tuple[dict[str, str], str, str]:
     snapshot = json.loads(_out(
         "gh", "api", "--hostname", "github.com", f"repos/{slug}/commits/{ref}",
     ))  # fmt: skip
-    commit, tree = snapshot["sha"], snapshot["commit"]["tree"]["sha"]
-    fetch = _slug_fetch(slug, commit)
+    commit, tree = str(snapshot["sha"]), str(snapshot["commit"]["tree"]["sha"])
+    names = _tree_paths(slug, tree)
+    texts = asyncio.run(_fetch_all(_slug_fetch(slug, commit), names))
     files: dict[str, str] = {}
-    for name in _tree_paths(slug, tree):
-        text = fetch(name)
+    for name, text in zip(names, texts, strict=True):
+        if isinstance(text, SystemExit):
+            raise text
         if text is None:
             raise SystemExit(f"{slug}: {name} listed in tree {tree} but unreadable")
         files[name] = text
     return files, commit, tree
+
+
+CONTENT_READS = 8
+
+
+async def _fetch_all(fetch: Fetch, names: list[str]) -> list[str | SystemExit | None]:
+    """Read ``names`` through ``fetch``, at most ``CONTENT_READS`` at once, in ``names`` order.
+
+    A read that exits returns its ``SystemExit`` in place, so the caller raises the
+    first one in order outside the event loop.
+    """
+    gate = asyncio.Semaphore(CONTENT_READS)
+
+    async def one(name: str) -> str | SystemExit | None:
+        async with gate:
+            try:
+                return await asyncio.to_thread(fetch, name)
+            except SystemExit as exit_:
+                return exit_
+
+    async with asyncio.TaskGroup() as group:
+        tasks = [group.create_task(one(name)) for name in names]
+    return [task.result() for task in tasks]
 
 
 def inventory(repo: str) -> dict[str, Any]:
@@ -976,7 +999,7 @@ def tag_commit(action: str, tag: str) -> tuple[str, str, str]:
             if done.returncode:
                 return "unchecked", done.stderr.strip() or "gh failed", ""
             obj = json.loads(done.stdout)["object"]
-    except (KeyError, TypeError, ValueError):
+    except KeyError, TypeError, ValueError:
         pass
     return "unchecked", "unexpected ref response", ""
 
@@ -1037,7 +1060,7 @@ def proposal(slug: str, number: str) -> dict[str, Any]:
 
     def flush() -> None:
         nonlocal other
-        for old, new in zip(removed, added):
+        for old, new in zip(removed, added, strict=False):
             was, now = parse_uses(old), parse_uses(new)
             if (
                 was

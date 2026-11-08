@@ -1,11 +1,14 @@
 #!/usr/bin/env -S uv run --script
 # /// script
-# requires-python = ">=3.12"
+# requires-python = ">=3.15"
 # dependencies = [
 #     "pyyaml>=6.0",
 #     "rich>=13.0",
 #     "typer>=0.15",
 # ]
+#
+# [tool.ty.environment]
+# extra-paths = ["."]
 # ///
 """E2E plugin lifecycle tests for tony/skills.
 
@@ -30,8 +33,6 @@ Test both sources:
     uv run scripts/e2e.py --source both
 """
 
-from __future__ import annotations
-
 import ast
 import json
 import os
@@ -45,8 +46,8 @@ from pathlib import Path
 
 import rich.console
 import typer
-import yaml
-from _private_path import PrivatePath  # pyright: ignore[reportImplicitRelativeImport]
+from _private_path import PrivatePath
+lazy import yaml
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 MARKETPLACE_NAME = "skills"
@@ -83,12 +84,13 @@ WEAVE_ENGINE = WEAVE_DIR / "scripts" / "engine.py"
 app = typer.Typer(help="E2E plugin lifecycle tests for tony/skills.")
 console = rich.console.Console()
 
+# typer cannot read a PEP 695 alias, so these stay plain assignments.
 Source = t.Literal["local", "github", "both"]
 Host = t.Literal["claude", "codex", "both"]
 
 CODEX_SKILL_ENTRY_RE = re.compile(r"^- (?P<id>[A-Za-z0-9:._-]+):", re.MULTILINE)
 
-TestCase = tuple[str, t.Callable[[], None]]
+type TestCase = tuple[str, t.Callable[[], None]]
 
 
 class TestFailureError(Exception):
@@ -322,7 +324,7 @@ def _test_static_marketplace_json() -> list[TestCase]:
 
     def _check_marketplace() -> None:
         _assert(manifest_path.is_file(), "marketplace.json not found")
-        data: dict[str, t.Any] = json.loads(  # pyright: ignore[reportAny]
+        data: dict[str, t.Any] = json.loads(
             manifest_path.read_text(encoding="utf-8"),
         )
         plugins_list = t.cast(
@@ -880,7 +882,7 @@ def _engine_eval(expression: str) -> object:
         text=True,
         check=True,
     )
-    result: object = json.loads(proc.stdout)  # pyright: ignore[reportAny]
+    result: object = json.loads(proc.stdout)
     return result
 
 
@@ -1009,7 +1011,7 @@ def _check_weave_engine_credit_strings() -> None:
             if isinstance(node, ast.Assign)
             and any(isinstance(n, ast.Name) and n.id == "CREDIT_PATTERNS" for n in node.targets)
         ),
-        t.cast("list[str]", []),
+        [],
     )
     _assert(bool(listed), "model-cli: run_tier.py has no CREDIT_PATTERNS to compare with")
     missing = [item for item in listed if item.lower() not in known]
@@ -1413,7 +1415,7 @@ def _codex_skill_ids(*, implicit: bool) -> dict[str, list[str]]:
 def _declared_codex_version(plugin: str) -> str:
     """Return the version a plugin's Codex manifest declares."""
     manifest = REPO_ROOT / "plugins" / plugin / ".codex-plugin" / "plugin.json"
-    declared: dict[str, t.Any] = json.loads(  # pyright: ignore[reportAny]
+    declared: dict[str, t.Any] = json.loads(
         manifest.read_text(encoding="utf-8"),
     )
     return t.cast("str", declared["version"])
@@ -1451,7 +1453,7 @@ def _test_static_codex_manifests() -> list[TestCase]:
 
     def _check_marketplace() -> None:
         _assert(marketplace.is_file(), "Codex marketplace.json not found")
-        data: dict[str, t.Any] = json.loads(  # pyright: ignore[reportAny]
+        data: dict[str, t.Any] = json.loads(
             marketplace.read_text(encoding="utf-8"),
         )
         entries = t.cast("list[dict[str, t.Any]]", data.get("plugins", []))
@@ -1476,7 +1478,7 @@ def _test_static_codex_manifests() -> list[TestCase]:
             d = REPO_ROOT / "plugins" / name
             manifest = d / ".codex-plugin" / "plugin.json"
             _assert(manifest.is_file(), f"{name}: missing .codex-plugin/plugin.json")
-            data: dict[str, t.Any] = json.loads(  # pyright: ignore[reportAny]
+            data: dict[str, t.Any] = json.loads(
                 manifest.read_text(encoding="utf-8"),
             )
             for field in ("name", "version", "description", "skills"):

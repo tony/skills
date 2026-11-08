@@ -1,0 +1,28 @@
+{
+  "skill_name": "probe",
+  "trigger": {
+    "positive": [
+      {
+        "prompt": "probe a fix for the CI errors before committing to an approach",
+        "top_k": 1
+      },
+      {
+        "prompt": "do a quick probe to prove the idea holds",
+        "top_k": 1
+      },
+      {
+        "prompt": "verify your solution in a probe to confirm it really is that simple",
+        "top_k": 2
+      }
+    ],
+    "negative": [
+      {
+        "prompt": "keep spiking until the design settles",
+        "owner": "ratchet"
+      },
+      {
+        "prompt": "the space probe reached orbit"
+      }
+    ]
+  }
+}

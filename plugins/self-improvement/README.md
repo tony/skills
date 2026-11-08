@@ -76,7 +76,7 @@ clear.
 
 ## Prerequisites
 
-- python 3.9 or newer (standard library only), for `scripts/sweep.py`
+- python 3.14 or newer (standard library only), for `scripts/sweep.py`
 - git, for dating rules, mapping renames, and dating each skill's first commit
 - the host's session-search tool, or `rg`, to collect skill-tool launches
 

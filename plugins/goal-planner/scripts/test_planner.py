@@ -1,9 +1,6 @@
 """Critical contracts for goal sizing, immutable bundles, and approved settings."""
 
 # ruff: noqa: S101, INP001, PLR2004, SLF001
-# pyright: reportAny=false, reportUnusedCallResult=false, reportPrivateUsage=false
-from __future__ import annotations
-
 import io
 import json
 import os
@@ -13,7 +10,7 @@ from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from typing import cast
 
-import planner  # pyright: ignore[reportImplicitRelativeImport]
+import planner
 import pytest
 
 

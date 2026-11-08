@@ -5,9 +5,6 @@ https remote through git's url.<base>.insteadOf rewrite.
 """
 
 # ruff: noqa: S101, S603, INP001, D101, D102, D103, D105, ARG001, PLR2004, SLF001, EM101, ANN401, PYI034
-# pyright: reportAny=false, reportUnusedCallResult=false, reportUnusedParameter=false, reportImplicitStringConcatenation=false, reportPrivateUsage=false, reportPrivateLocalImportUsage=false, reportUnannotatedClassAttribute=false
-
-from __future__ import annotations
 
 import gzip
 import io
@@ -17,7 +14,7 @@ import sys
 import tarfile
 import typing as t
 
-import deps  # pyright: ignore[reportImplicitRelativeImport]
+import deps
 import pytest
 
 if t.TYPE_CHECKING:
@@ -517,7 +514,8 @@ def test_lookup_npm_git_plus_https_is_normalized_and_git_head_returned(
     )
     monkeypatch.setattr(deps, "run_cmd", fake_run(payload))
     out = deps.lookup("npm", "zod", "3.23.8", crate_vcs=False)
-    assert out["repository"]["url"] == "https://github.com/colinhacks/zod"  # pyright: ignore[reportIndexIssue]
+    repository = t.cast("dict[str, str]", out["repository"])
+    assert repository["url"] == "https://github.com/colinhacks/zod"
     assert (out["commit"], out["commit_source"]) == ("ca42", "gitHead")
 
 

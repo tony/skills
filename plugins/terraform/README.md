@@ -101,7 +101,7 @@ request is conversational (e.g., "the providers here are ancient").
 ## Prerequisites
 
 - `git` and a repository with tracked Terraform or OpenTofu files.
-- `python3` (3.9 or newer) for `scripts/lockctl.py`.
+- `python3` (3.14 or newer) for `scripts/lockctl.py`.
 - `curl` and `jq` for registry and release lookups.
 - `terraform` or `tofu` CLI on `PATH`. The plugin resolves versions against
   the detected tool's registry.

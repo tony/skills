@@ -19,10 +19,6 @@ time limit (default 90 seconds) runs out or a path cannot be read,
 between directory entries, so one blocked system call can overrun it.
 """
 
-# pyright: reportAny=false
-
-from __future__ import annotations
-
 import argparse
 import json
 import math

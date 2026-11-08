@@ -20,8 +20,6 @@ A failing report starts with the counts of the stale categories:
 '⚠ 1 misquoted, 1 moved'
 """
 
-from __future__ import annotations
-
 import argparse
 import json
 import re
@@ -30,7 +28,7 @@ import sys
 from pathlib import Path
 from typing import cast
 
-from term_metrics import parse_locator  # pyright: ignore[reportImplicitRelativeImport]
+from term_metrics import parse_locator
 
 _FENCE = re.compile(r"^```(\w*)\s*$")
 _IDENTITY = ("analyzer-sha256:", "analyzer-version:")
@@ -199,7 +197,7 @@ def changed(metrics: str, fresh: dict[str, str]) -> dict[str, list[str]]:
             continue
         before, after = _significant(recorded), _significant(fresh[command])
         if before != after:
-            pair = next((p for p in zip(before, after) if p[0] != p[1]), None)
+            pair = next((p for p in zip(before, after, strict=False) if p[0] != p[1]), None)
             detail = f"recorded {pair[0]}, now {pair[1]}" if pair else "line count differs"
             out["changed"].append(f"`{command}`: {detail}")
     return out
@@ -289,9 +287,12 @@ def _run(args: argparse.Namespace) -> int:
     command = cast("str", args.command)
     if command == "moved":
         current = cast("dict[str, object]", _json(cast("str", args.current)))
-        if not all(v is None or isinstance(v, str) for v in current.values()):
-            return _refuse("current SHAs must be strings or null")
-        data = moved(_sources(cast("str", args.sources)), cast("dict[str, str | None]", current))
+        shas: dict[str, str | None] = {}
+        for key, value in current.items():
+            if value is not None and not isinstance(value, str):
+                return _refuse("current SHAs must be strings or null")
+            shas[key] = value
+        data = moved(_sources(cast("str", args.sources)), shas)
         print(json.dumps(data))
     elif command == "local":
         study = cast("str", args.study)

@@ -11,11 +11,8 @@ judge-plan, judge-parse, panel-merge, worktrees, participant, claim, write, pack
 capture, adopt, commit, guard, stash-restore, update.
 """
 
-# pyright: reportAny=false, reportExplicitAny=false, reportUnusedCallResult=false
-from __future__ import annotations
-
 import argparse
-import concurrent.futures
+import asyncio
 import contextlib
 import fcntl
 import hashlib
@@ -32,15 +29,23 @@ import sys
 import tempfile
 import time
 import typing as t
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
-import closest_model  # pyright: ignore[reportImplicitRelativeImport]
+import closest_model
 
 if t.TYPE_CHECKING:
-    from collections.abc import Callable, Collection, Generator, Iterator, Mapping, Sequence
+    from collections.abc import (
+        Callable,
+        Collection,
+        Coroutine,
+        Generator,
+        Iterator,
+        Mapping,
+        Sequence,
+    )
 
-Json = dict[str, t.Any]
+type Json = dict[str, t.Any]
 
 SCHEMA_VERSION = 1
 MODES = ("fast", "balanced", "deep")
@@ -216,7 +221,7 @@ class EngineError(Exception):
 
 def stamp() -> str:
     """Return the current UTC time as ``YYYY-MM-DDTHH:MM:SSZ``."""
-    return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    return datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
 def emit(doc: Json) -> None:
@@ -454,7 +459,7 @@ def parse_flags(text: str, command: str, *, default_timeout: int | None = None) 
     prof = PROFILES[command]
     base = default_timeout or prof.timeout
     prompt, values, found = _extract_flags(text, prof)
-    errors: list[str] = found["errors"]
+    errors = t.cast("list[str]", found["errors"])
     notes: list[str] = []
     if found["reserved"]:
         notes.append("ignored reserved flags: " + ", ".join(f"--{r}" for r in found["reserved"]))
@@ -519,7 +524,7 @@ def parse_flags(text: str, command: str, *, default_timeout: int | None = None) 
     }
 
 
-def list_models(exe: str) -> list[str] | None:
+async def list_models(exe: str) -> list[str] | None:
     """Return the lines ``exe`` lists its models on, or None when it cannot list them.
 
     Runs outside the user's checkout so a listing can never touch it.
@@ -528,20 +533,21 @@ def list_models(exe: str) -> list[str] | None:
     if argv is None:
         return None
     try:
-        proc = subprocess.Popen(  # noqa: S603
-            argv, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
-            text=True, cwd=tempfile.gettempdir(), start_new_session=True,
+        proc = await asyncio.create_subprocess_exec(
+            *argv, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
+            cwd=tempfile.gettempdir(), start_new_session=True,
         )  # fmt: skip
     except OSError:
         return None
     try:
-        out, _ = proc.communicate(timeout=LIST_TIMEOUT)
-    except subprocess.TimeoutExpired:
+        async with asyncio.timeout(LIST_TIMEOUT):
+            out, _ = await proc.communicate()
+    except TimeoutError:
         # A child holding the pipe would outlive a plain kill of the CLI.
         os.killpg(proc.pid, signal.SIGKILL)
-        _ = proc.communicate()
+        await proc.wait()
         return None
-    return out.splitlines() if proc.returncode == 0 else None
+    return out.decode(errors="replace").splitlines() if proc.returncode == 0 else None
 
 
 def resolve_step(step: Step, listing: Sequence[str] | None) -> tuple[str | None, str]:
@@ -592,9 +598,17 @@ def lane_chain(
     return chain
 
 
+async def _list_all(
+    exes: Sequence[str], lister: Callable[[str], Coroutine[t.Any, t.Any, list[str] | None]]
+) -> dict[str, list[str] | None]:
+    async with asyncio.TaskGroup() as group:
+        tasks = [group.create_task(lister(exe)) for exe in exes]
+    return {exe: task.result() for exe, task in zip(exes, tasks, strict=True)}
+
+
 def detect(
     which: Callable[[str], str | None] = shutil.which,
-    lister: Callable[[str], list[str] | None] | None = list_models,
+    lister: Callable[[str], Coroutine[t.Any, t.Any, list[str] | None]] | None = list_models,
 ) -> Json:
     """Report installed model CLIs, each lane's resolved chain, and the best search tools.
 
@@ -604,8 +618,7 @@ def detect(
     exes = sorted({s.exe for steps in LANES.values() for s in steps if s.template and which(s.exe)})
     listings: dict[str, list[str] | None] = {}
     if lister is not None and exes:
-        with concurrent.futures.ThreadPoolExecutor(len(exes)) as pool:
-            listings = dict(zip(exes, pool.map(lister, exes)))
+        listings = asyncio.run(_list_all(exes, lister))
     lanes: Json = {}
     for lane in LANES:
         chain = lane_chain(lane, which, listings.get if lister is not None else None)
@@ -894,7 +907,7 @@ def _git_paths(top: str | Path) -> dict[str, str]:
     if dotgit.is_dir() and not _sets_hooks_path(dotgit):
         return {name: str(dotgit / name) for name in names}
     out = git(top, "rev-parse", *[a for n in names for a in ("--git-path", n)])
-    return dict(zip(names, out.splitlines()))
+    return dict(zip(names, out.splitlines(), strict=True))
 
 
 def _file_digest(path: Path) -> str:
@@ -1112,7 +1125,7 @@ def _touched(top: str, pre_tree: str, post_tree: str) -> dict[str, str]:
     fields = git_z(
         top, "diff-tree", "-r", "--no-renames", "--name-status", "-z", pre_tree, post_tree
     )
-    return {path: status for status, path in zip(fields[0::2], fields[1::2])}
+    return {path: status for status, path in zip(fields[0::2], fields[1::2], strict=True)}
 
 
 def _guard_of(session: Json) -> Json:
@@ -1161,7 +1174,7 @@ def guard_check(session_dir: Path, label: str = "check", *, initial: bool = Fals
         seen = json.loads(last.read_text(encoding="utf-8"))
         if all(seen.get(key) == value for key, value in current.items()):
             return {**seen["result"], "repeat": True}
-    vid = f"{label}-{datetime.now(timezone.utc).strftime('%H%M%S')}-{random.randbytes(2).hex()}"
+    vid = f"{label}-{datetime.now(UTC).strftime('%H%M%S')}-{random.randbytes(2).hex()}"
     vdir = gdir / vid
     vdir.mkdir(mode=0o700)
     touched = _touched(top, pre["tree"], post_tree)
@@ -1476,8 +1489,7 @@ def init_session(  # noqa: PLR0913
     root = aip_root()
     repo_path = root / "repos" / repo_dir
     session_id = (
-        f"{datetime.now(timezone.utc).strftime('%Y%m%d-%H%M%SZ')}"
-        f"-{os.getpid()}-{random.randbytes(2).hex()}"
+        f"{datetime.now(UTC).strftime('%Y%m%d-%H%M%SZ')}-{os.getpid()}-{random.randbytes(2).hex()}"
     )
     session_dir = repo_path / "sessions" / command / session_id
     new_repo = not repo_path.exists()
@@ -2087,7 +2099,7 @@ def plan_judges(session_dir: Path, mode: str, n: int) -> Json:
     ``external`` (``dispatch --judge``).
     """
     session = load_session(session_dir)
-    people: list[str] = session["participants"]
+    people = t.cast("list[str]", session["participants"])
     native = session["worker_backend"] == "subagents"
 
     def how(who: str) -> str:
@@ -2196,11 +2208,11 @@ def parse_judge(text: str, label_map: Mapping[str, str] | None = None) -> Json:
         if len(cells) != len(columns) or any(n is None for n in nums):
             errors.append(f"unreadable row: {label}")
             continue
-        values = t.cast("list[float]", nums)
+        values = [n for n in nums if n is not None]
         if label.lower().startswith("total"):
-            totals = dict(zip(columns, values))
+            totals = dict(zip(columns, values, strict=True))
             continue
-        for col, num in zip(columns, values):
+        for col, num in zip(columns, values, strict=True):
             if num > 10:  # noqa: PLR2004
                 errors.append(f"{label} for {col} is above 10")
             scores[col][label] = num
@@ -2386,7 +2398,7 @@ def _create_worktrees(
         return {"ok": True, "worktrees": made}
     require_safe_toplevel(top)
     base = base or ("head" if session.get("mutating") else "pre")
-    when = when or datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S")
+    when = when or datetime.now(UTC).strftime("%Y%m%d-%H%M%S")
     for name in participants:
         if name in made:
             continue
@@ -3002,7 +3014,7 @@ def commit_paths(repo: str, message_file: str, paths: Sequence[str]) -> Json:  #
         msg = f"{exc}; {state}; recovery retained at {recovery}"
         raise EngineError(msg) from exc
     finally:
-        for owned in ([temporary] if temporary is not None else []) + acquired:
+        for owned in ([temporary] if temporary is not None else []) + acquired:  # ty: ignore[redundant-condition-strict]
             try:
                 owned.unlink(missing_ok=True)
             except OSError as exc:

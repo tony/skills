@@ -17,7 +17,7 @@ Per-repository facts (remotes, fork signal, default branch, commits
 behind the remote, toolchain pins read from the default branch) come from
 `references/repo_facts.py`; resolve that path from this skill's
 directory to an absolute one and write it literally in the command. It
-needs `python3` 3.9 or newer.
+needs `python3` 3.14 or newer.
 
 References:
 

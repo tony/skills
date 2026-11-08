@@ -1,0 +1,25 @@
+{
+  "skill_name": "rewrite-aggressively",
+  "trigger": {
+    "positive": [
+      {
+        "prompt": "strip out CHANGES made in other commits via rebase, then cut a fresh CHANGES commit",
+        "top_k": 1
+      },
+      {
+        "prompt": "regenerate CHANGES for this PR and strip it from mixed commits",
+        "top_k": 1
+      },
+      {
+        "prompt": "rewrite the changelog entries for this branch aggressively",
+        "top_k": 1
+      }
+    ],
+    "negative": [
+      {
+        "prompt": "rewrite this module from scratch now that we know the shape",
+        "owner": "redo-from-scratch"
+      }
+    ]
+  }
+}

@@ -1,14 +1,11 @@
 """Tests for default_delta.py against a fake ruff executable and real ruff."""
 
 # ruff: noqa: S101, S603, S607, INP001, PLR2004
-# pyright: reportAny=false, reportUnusedCallResult=false
-from __future__ import annotations
-
 import shutil
 import subprocess
 from typing import TYPE_CHECKING
 
-import default_delta  # pyright: ignore[reportImplicitRelativeImport]
+import default_delta
 import pytest
 
 if TYPE_CHECKING:

@@ -77,7 +77,7 @@ Pull-request and repository-file rules are in
   ([v2.43.0 notes](https://github.com/cli/cli/releases/tag/v2.43.0)); an
   older `gh` shows up at run time as the `Unknown JSON field` probe in
   `create-issue`.
-- `python3` 3.9 or newer, for `scripts/issue.py` (standard library only).
+- `python3` 3.14 or newer, for `scripts/issue.py` (standard library only).
 - `git`, for resolving tags and refs when pinning links.
 - `curl` and `jq`, for package-registry lookups and pre-publish link
   checks.

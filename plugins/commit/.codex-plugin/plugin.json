@@ -1,6 +1,6 @@
 {
   "name": "commit",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Create git commits following project conventions with format enforcement and safety checks.",
   "author": {
     "name": "Tony Narlock",

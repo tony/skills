@@ -29,7 +29,8 @@ Write entries, commit messages, and user-facing replies per
 ## Phase 1: Gather Context
 
 1. **Read project conventions** per `entry-rules.md`.
-2. **Detect the base branch** per `branch-scope.md`. Stop if on it.
+2. **Detect the base branch** per `branch-scope.md`. Stop if on it, unless
+   the user asked for a final's section.
 3. **Find and read the changelog file** per `branch-scope.md`.
 4. **Analyze its format.** The existing file is the source of truth:
    - Release heading pattern (`## v1.2.3`, `## [1.2.3]`, `## project v1.2.3`,
@@ -44,6 +45,7 @@ Write entries, commit messages, and user-facing replies per
    - Section names, order, and capitalization of the most recent populated
      release.
    - Entry shape and typical length.
+   - Prerelease sections of a final not cut yet, per `branch-scope.md`.
 5. **Check for a PR.** `gh pr view --json number,title,body,labels` returns the
    number, title, body, and labels. Apply the PR-reference and lookup-status
    rules in `entry-rules.md` when the number cannot be verified. The PR
@@ -54,13 +56,15 @@ Write entries, commit messages, and user-facing replies per
    only and say why.
 7. **Get commits.** Fetch per `branch-scope.md` first. `git log origin/<base>..HEAD --format='%H %s%n%b---'`
    gives subjects and bodies (with no `origin` remote, substitute the local
-   base name). No commits ahead: report "No commits ahead of
-   the base branch" and stop.
+   base name). No commits ahead, outside a request for a final's section:
+   report "No commits ahead of the base branch" and stop.
 
 ## Phase 2: Categorize and Generate
 
 Categorize and group the commits, then write the exact markdown to insert,
 both per `entry-rules.md`. Keep each entry's source commits for traceability.
+When the user asked for a final's section, write that section per
+`references/graduation.md` instead.
 
 ## Phase 3: Present for Review
 
@@ -130,7 +134,9 @@ never commit.
 
 1. Insert at the Phase 1 insertion point with Edit, matching the file's
    blank-line spacing. Leave every release heading and version file
-   untouched, unless the user explicitly asked to cut a release.
+   untouched, unless the user explicitly asked to cut a release. A final's
+   section replaces its prerelease sections per
+   `references/graduation.md`.
 2. Merge into the unreleased block:
    - Append to an existing section heading there, before the next `###` or
      `## ` heading. Never duplicate a heading.

@@ -1,9 +1,8 @@
 ---
 name: pr
 description: >-
-  Use when drafting a pull request description from the current branch's
-  diff, optionally creating the PR with gh.
-disable-model-invocation: true
+  Use when a user explicitly wants to make or open a PR: draft its
+  description from a branch diff and optionally create it with gh.
 allowed-tools: ["Bash", "Read", "Write", "AskUserQuestion"]
 metadata:
   argument-hint: "[optional hint about the PR, e.g. 'fixes the race condition']"

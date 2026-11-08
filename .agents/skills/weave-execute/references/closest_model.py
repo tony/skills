@@ -35,8 +35,6 @@ True
 'Gemini 3.1 Pro (High)'
 """
 
-from __future__ import annotations
-
 import argparse
 import re
 import sys
@@ -95,13 +93,14 @@ def newest(
     regex = _template_regex(template)
     best: tuple[tuple[int, ...], str] | None = None
     for line in lines:
-        fields = [f.strip() for f in re.split(r"\t| - ", line, maxsplit=1)]
+        fields = [str(f).strip() for f in re.split(r"\t| - ", line, maxsplit=1)]
         hit = regex.fullmatch(fields[0])
         if hit is None or set(fields[0].split("-")) & set(exclude):
             continue
         version = _version(hit.group(1))
         if best is None or version > best[0]:
-            best = (version, fields[1] if label and len(fields) > 1 else fields[0])
+            chosen: str = fields[1] if label and len(fields) > 1 else fields[0]
+            best = (version, chosen)
     return None if best is None else best[1]
 
 
@@ -114,7 +113,7 @@ def match(words: str, lines: list[str], *, label: bool = False) -> list[str]:
     needles = words.lower().split()
     found: list[str] = []
     for line in lines:
-        fields = [f.strip() for f in re.split(r"\t| - ", line, maxsplit=1)]
+        fields = [str(f).strip() for f in re.split(r"\t| - ", line, maxsplit=1)]
         if len(fields) > 1 and needles and all(n in line.lower() for n in needles):
             found.append(fields[1] if label else fields[0])
     return found

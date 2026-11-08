@@ -24,8 +24,6 @@ Notes
   only in the controller, so no table prints; profile serially.
 """
 
-from __future__ import annotations
-
 import time
 import typing as t
 from collections import defaultdict

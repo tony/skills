@@ -1,9 +1,6 @@
 """Tests for asana_html.py."""
 
 # ruff: noqa: S101, S603, S314, INP001, D103, PLR2004
-# pyright: reportUnusedCallResult=false
-from __future__ import annotations
-
 import subprocess
 import sys
 import xml.etree.ElementTree as ET

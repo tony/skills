@@ -1,8 +1,7 @@
 ---
 name: rebase
-description: Use when asked to rebase the current branch onto remote trunk, check file overlap, and resolve conflicts while preserving local edits
+description: "Use when a user explicitly wants to rebase a branch onto remote trunk, check file overlap, and resolve conflicts while keeping local edits."
 allowed-tools: ["Bash", "Read", "Edit", "AskUserQuestion"]
-disable-model-invocation: true
 ---
 
 ## Task
@@ -21,7 +20,7 @@ Write reports and any authorized commit message per
 
 ### Phase 1: Inspect the repository and detect trunk
 
-1. Require Git 2.36 or newer and Python 3.9 or newer. Stop if either is absent.
+1. Require Git 2.36 or newer and Python 3.14 or newer. Stop if either is absent.
 2. Read the branch, `git status --short`, and remotes. Stop outside a
    repository, on detached HEAD, or without a remote. Record staged and
    unstaged paths separately so final verification can check both.

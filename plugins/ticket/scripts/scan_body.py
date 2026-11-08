@@ -61,8 +61,6 @@ is printed as is.
 ['![shot](https://x.io/a.png)', '<img src="b.gif">']
 """
 
-from __future__ import annotations
-
 import json
 import re
 import sys

@@ -9,9 +9,6 @@ one JSON object. Recovery refs and stashes are never deleted.
 """
 
 # ruff: noqa: EM101, EM102, TRY003
-# pyright: reportAny=false, reportUnusedCallResult=false
-
-from __future__ import annotations
 
 import argparse
 import fcntl
@@ -399,7 +396,7 @@ def main(argv: list[str]) -> int:
                 )
             ):
                 result.update(asdict(replay))
-        except (StopError, OSError, ValueError, TypeError):
+        except StopError, OSError, ValueError, TypeError:
             pass
         print(json.dumps(result))
         return 1

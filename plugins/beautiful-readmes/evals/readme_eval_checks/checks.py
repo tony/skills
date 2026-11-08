@@ -195,7 +195,7 @@ def _bind_record(
 
 
 @contextlib.contextmanager
-def _workspace(recorded: Path, trace: Path) -> Generator[Path, None, None]:
+def _workspace(recorded: Path, trace: Path) -> Generator[Path]:
     """Read the native runner's relocated data without executing inside it."""
     if recorded.is_dir():
         yield recorded

@@ -1,9 +1,7 @@
 """Integration tests for engine.py: real git repositories, stub model CLIs on PATH."""
 
 # ruff: noqa: S101, S603, INP001, PLR2004, D103, ARG001, PT018
-# pyright: reportAny=false, reportUnusedParameter=false, reportUnusedCallResult=false
-from __future__ import annotations
-
+import asyncio
 import io
 import json
 import os
@@ -14,7 +12,7 @@ import subprocess
 import time
 from pathlib import Path
 
-import engine  # pyright: ignore[reportImplicitRelativeImport]
+import engine
 import pytest
 
 pytestmark = pytest.mark.integration
@@ -93,16 +91,23 @@ def read_only_session(backend: str = "model-clis") -> tuple[Path, engine.Json]:
     return Path(doc["session_dir"]), doc
 
 
-def dispatch(sdir: Path, lane: str, **kw: object) -> engine.Json:
-    kw.setdefault("timeout", 5)
-    kw.setdefault("mutating", False)
-    kw.setdefault("rate_wait", 0)
+def dispatch(
+    sdir: Path,
+    lane: str,
+    *,
+    timeout: float = 5,
+    mutating: bool = False,
+    task: engine.Task | None = None,
+) -> engine.Json:
     return engine.dispatch_lane(
         sdir,
         lane,
         n=1,
         prompt_file=prompt_file({"session_dir": str(sdir)}),
-        **kw,  # pyright: ignore[reportArgumentType]
+        timeout=timeout,
+        mutating=mutating,
+        rate_wait=0,
+        task=task,
     )
 
 
@@ -288,6 +293,26 @@ def test_detect_reports_clis_and_search_tools(repo: Path, bindir: Path) -> None:
     assert doc["lanes"]["agy"] is None
     assert doc["lanes"]["gpt"]["executor"] == "codex"
     assert doc["search"]["files"] in ("fd", "find")
+
+
+def test_detect_lists_clis_concurrently(bindir: Path) -> None:
+    stub(bindir, "agent", "exit 0")
+    stub(bindir, "agy", "exit 0")
+    started: list[str] = []
+    both = asyncio.Event()
+
+    async def lister(exe: str) -> list[str] | None:
+        started.append(exe)
+        if len(started) == 2:
+            both.set()
+        # Each listing waits for the other to start, so serial listing deadlocks.
+        async with asyncio.timeout(2):
+            await both.wait()
+        return [f"{exe}-listing"]
+
+    doc = engine.detect(lister=lister)
+    assert sorted(started) == ["agent", "agy"]
+    assert doc["clis"]["agent"] is True
 
 
 # --- repo guard ------------------------------------------------------------

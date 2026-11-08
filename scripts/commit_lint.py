@@ -1,13 +1,14 @@
-#!/usr/bin/env python3
-"""Check commit messages against the AGENTS.md format.
+#!/usr/bin/env -S uv run --script
+# /// script
+# requires-python = ">=3.15"
+# ///
+"""Check commit messages against the format in .github/WRITING.md.
 
 Usage: commit_lint.py BASE [HEAD]
 
 Checks every non-merge commit in BASE..HEAD (HEAD defaults to HEAD). Prints one
 line per problem and exits 1 when there is any.
 """
-
-from __future__ import annotations
 
 import re
 import subprocess

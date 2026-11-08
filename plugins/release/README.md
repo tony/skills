@@ -46,7 +46,9 @@ Claude Code uses a leading slash (`/release:…`). Codex omits it (`release:…`
 ### `/release:cut <version> [--push] [--tag] [--push-tag]`
 
 Cuts a release: bumps versions, refreshes lockfiles, dates changelogs, runs
-quality gates, and commits.
+quality gates, and commits. A final cut after its own prereleases gets one
+changelog section for the net change since the previous final, which replaces
+the prerelease sections.
 
 By default the commit stays local. The flags `--push`, `--tag` and `--push-tag`
 and the full safety contract (refusals, push URL checks, hooks, signing,
@@ -83,14 +85,15 @@ Python's standard library.
 ## Shared reference
 
 `references/release-conventions.md` holds the discovery procedures and
-templates.
+templates. `references/graduation.md` writes a final's section after its
+prereleases.
 
 ## Prerequisites
 
 - git, gh and ripgrep (`rg`). The CI steps use `gh run list --commit` with the
   `attempt` JSON field, `gh run watch --exit-status`, `gh run rerun --failed` and
   `gh cache delete`, checked against `gh` 2.102.0.
-- python3 (3.9 or newer) on `PATH`, for the bundled scripts.
+- python3 (3.14 or newer) on `PATH`, for the bundled scripts.
 - POSIX process groups for downstream repository discovery, checkout checks and
   publication timeouts.
 - The target project's toolchain (as required by quality gates).

@@ -323,7 +323,7 @@ commit" approves **Apply and commit** and nothing broader: no push.
 
 `<scan_apply.py>` is `references/scan_apply.py`, resolved from this
 skill's directory to an absolute path written literally in each command.
-It requires python3 3.9 or newer. Review messages against
+It requires python3 3.14 or newer. Review messages against
 `references/prose-rules.md` before applying: no AI trailers or emoji.
 
 Take `commits.json` in list order. Start `<expected-head>` at `START_SHA`;

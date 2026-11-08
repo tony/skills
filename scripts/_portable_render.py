@@ -14,8 +14,6 @@ no third-party package. Frontmatter arrives already parsed on
 
 # ruff: noqa: INP001
 
-from __future__ import annotations
-
 import ast
 import dataclasses
 import json

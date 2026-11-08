@@ -33,10 +33,6 @@ line counts as added when ``git diff BASE HEAD`` added it; without
 """
 
 # ruff: noqa: ANN401, PLR2004
-# pyright: reportAny=false, reportExplicitAny=false, reportUnusedCallResult=false
-# pyright: reportUnknownVariableType=false, reportUnknownArgumentType=false
-
-from __future__ import annotations
 
 import argparse
 import json
@@ -46,7 +42,7 @@ import sys
 from pathlib import Path
 from typing import Any, final
 
-Sig = dict[str, Any]
+type Sig = dict[str, Any]
 
 HEX_ESCAPE = re.compile(r"\\x\{([0-9A-Fa-f]+)\}")
 HUNK = re.compile(r"^@@ -\d+(?:,\d+)? \+(\d+)(?:,(\d+))? @@")
@@ -265,7 +261,7 @@ def conventions_text() -> str:
     for name in CONVENTION_FILES:
         try:
             parts.append(Path(name).read_text(encoding="utf-8"))
-        except (OSError, UnicodeDecodeError):
+        except OSError, UnicodeDecodeError:
             continue
     return "\n".join(parts)
 
@@ -395,7 +391,7 @@ def scan_files(
             continue
         try:
             text = Path(path).read_text(encoding="utf-8")
-        except (OSError, UnicodeDecodeError):
+        except OSError, UnicodeDecodeError:
             continue
         new = (added or {}).get(path, set())
         for number, line in enumerate(text.splitlines(), start=1):

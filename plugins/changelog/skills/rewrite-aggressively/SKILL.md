@@ -1,9 +1,8 @@
 ---
 name: rewrite-aggressively
-description: Rebase out the branch's earlier changelog commits and regenerate its entries fresh; commits only with --commit
+description: "Use when a user explicitly wants to strip CHANGES edits from mixed commits by rebase and regenerate a branch changelog fresh."
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "AskUserQuestion"]
 argument-hint: "[--commit] [optional additional context about the changes]"
-disable-model-invocation: true
 ---
 
 # Rewrite Changelog Entries Aggressively
@@ -15,7 +14,10 @@ land as one fresh commit at the tip; otherwise they stay an uncommitted edit.
 
 Scope: only the branch's own changelog content is rewritten. Base-branch
 changelog content and code changes stay intact. Only pure changelog commits
-are dropped; surviving commits may receive new IDs during the rebase.
+are dropped; surviving commits may receive new IDs during the rebase. A
+request for a final's section is the exception in `branch-scope.md`: Phase 3
+writes it per `../../references/graduation.md`, replacing the prerelease
+sections.
 
 Additional context from user: $ARGUMENTS
 
@@ -163,7 +165,8 @@ merged, read the number from its merge commit on the base branch ("Merge pull
 request #N"); otherwise write `(#???)`. Never copy a number from a dropped
 commit or an earlier entry. Entries superseding a mixed commit's
 surviving changelog hunks may update those hunks, which are branch-owned, but
-nothing from the base branch.
+nothing from the base branch. Check for prerelease sections of a final not
+cut yet, per `branch-scope.md`.
 
 When the edit was approved up front (`--commit` or an invoking request), skip
 the Phase 3 reply and send only the Phase 4 reply, which carries the summary

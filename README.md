@@ -66,6 +66,7 @@ changes, and `respond` to screen review feedback.
 |--------|-------------|
 | [lean](plugins/lean/) | Writing discipline and cleanup tools for tight, slop-free prose and code. |
 | [beautiful-readmes](plugins/beautiful-readmes/) | Reader-first README assessment, writing and conservative improvement with useful examples and preservation checks. |
+| [voice](plugins/voice/) | Write or rephrase copy for the reader who will use it, from a brief of who they are, what they came to do, where it renders, when they arrive, and why it matters. |
 | [double-check](plugins/double-check/) | Forces verification requests to return re-derived answers instead of diffs against prior turns. The align skill restates a chat's analysis standalone after a revision-log reply. |
 | [gh](plugins/gh/) | File durable GitHub issues with reproductions, pinned links, and stripped PII. Enforces a markdown writing discipline reusable for any PR, comment, or ticket. |
 | [skill-style](plugins/skill-style/) | Hold SKILL.md files to a deletion test: a line stays only when removing it would change what the agent does. Frontmatter, code blocks, and sections survive verbatim. |
@@ -177,7 +178,9 @@ assume no language.
 
 Scripts run under [uv](https://docs.astral.sh/uv/getting-started/installation/).
 [AGENTS.md](AGENTS.md) holds the authoring rules and the commands for every
-check CI runs. `scripts/marketplace.py portable` writes the generated files
+check CI runs. [.github/WRITING.md](.github/WRITING.md) sets how commit
+messages, docs, and comments are written, and
+[.github/PYTHON.md](.github/PYTHON.md) how the scripts are. `scripts/marketplace.py portable` writes the generated files
 (`.agents/`, each plugin's `.codex-plugin/plugin.json`, and each plugin's copy
 of a file in `shared/`); edit the sources and regenerate, never the outputs.
 

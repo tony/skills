@@ -4,6 +4,7 @@
 
 - A branch is not a release
 - The one exception
+- Prereleases awaiting their final
 - Base branch
 - Changelog file
 - Whole-branch perspective
@@ -36,6 +37,13 @@ Cut or prepare a release only when the user explicitly asks and the version is
 settled: "cut v1.53.0", "prepare the 2.0 release", "this is the release branch
 for 0.9.4, date the heading".
 
+A request for a final's section while the changelog holds that final's
+prereleases ("write the 0.1.1 section" above `0.1.1-alpha.2`) is explicit too.
+Write it per `graduation.md`. Its range runs from the previous final's tag to
+`HEAD`, not from the base branch, and it replaces prerelease sections the base
+branch added. It therefore runs on the base branch or with no commits ahead,
+and it overrides a skill's limit to the branch's own entries.
+
 None of these is an explicit request:
 
 - A branch named `release/1.2`, `rc-3`, or `v2`.
@@ -47,6 +55,14 @@ An ambiguous ask ("update the changelog for the release") gets a question:
 which version, and is a release cut intended. Until answered, stay in the
 unreleased section. Without a question tool, print the question, stay in the
 unreleased section, and cut nothing.
+
+## Prereleases awaiting their final
+
+Run the `graduation` check in `graduation.md` without `--version`. When it
+reports `graduation: true`, the unreleased section sits above prerelease
+sections of `version`, which is not final yet. Unless the user asked for that
+final's section, entries still land in the unreleased section, never in a
+prerelease section, and `Notes` says the final's section must replace them.
 
 ## Base branch
 

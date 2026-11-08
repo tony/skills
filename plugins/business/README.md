@@ -127,7 +127,7 @@ Read from `references/`:
 
 ## Prerequisites
 
-- `python3` (3.9 or newer) for `scripts/business.py`.
+- `python3` (3.14 or newer) for `scripts/business.py`.
 - `git` for history-based collection.
 - `gh` CLI (optional) for PR/review telemetry.
 - Ticket-tracker MCPs/CLIs are probed at runtime but not required.

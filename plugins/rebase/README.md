@@ -41,12 +41,12 @@ Claude Code uses a leading slash (`/rebase:…`). Codex omits it (`rebase:…`).
 
 `/rebase:rebase` in Claude Code, `rebase:rebase` in Codex: rebase the current
 branch onto trunk, resolve conflicts, and run the checks your `AGENTS.md` / `CLAUDE.md`
-defines. It never pushes, and it runs only when you invoke it by name.
+defines. It runs when you ask for a rebase and never pushes.
 
 ## Prerequisites
 
 - git 2.36 or newer.
-- Python 3.9 or newer on a POSIX host, for the recovery helper.
+- Python 3.14 or newer on a POSIX host, for the recovery helper.
 - A remote carrying trunk; selection follows
   [the skill's inspection phase](skills/rebase/SKILL.md).
 

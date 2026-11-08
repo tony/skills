@@ -163,7 +163,7 @@ beside the serial one.
   `extract` fetches a remote corpus with plain git over HTTPS from the recorded
   source URL, so any host that serves git works.
 - rg, to inventory a corpus without reading all of it.
-- Python 3.9+, to run `scripts/term_metrics.py` (the stage gates and the
+- Python 3.14+, to run `scripts/term_metrics.py` (the stage gates and the
   analyzer), `scripts/scholar_pins.py` (local and remote pins,
   throwaway checkouts, identifier checks) and `scripts/verify_report.py` (the
   mechanical parts of `verify`). Both use the standard library only, so they run inside any corpus

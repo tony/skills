@@ -7,9 +7,6 @@ has a name and shell command, run from the isolated repository root.
 """
 
 # ruff: noqa: EM101, TRY003
-# pyright: reportAny=false, reportExplicitAny=false, reportUnusedCallResult=false
-
-from __future__ import annotations
 
 import argparse
 import json
@@ -89,7 +86,7 @@ def _clean_target(repo: Path, name: str, expected: str) -> None:
 
 
 @contextmanager
-def _cleanup(resource: str | Path) -> Generator[None, None, None]:
+def _cleanup(resource: str | Path) -> Generator[None]:
     try:
         yield
     except OSError as exc:
@@ -97,7 +94,7 @@ def _cleanup(resource: str | Path) -> Generator[None, None, None]:
 
 
 @contextmanager
-def _worktree(repo: Path, expected: str) -> Generator[Path, None, None]:
+def _worktree(repo: Path, expected: str) -> Generator[Path]:
     temporary = Path(tempfile.mkdtemp(prefix="slop-scan-"))
     scratch = temporary / "worktree"
     try:
@@ -200,7 +197,7 @@ def _publish(  # noqa: PLR0913
         return result
     finally:
         # Only this process may remove the lock it acquired.
-        if acquired:
+        if acquired:  # ty: ignore[redundant-condition-strict]
             with _cleanup(lock):
                 lock.unlink(missing_ok=True)
     removed = False

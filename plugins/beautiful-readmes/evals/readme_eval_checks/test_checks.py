@@ -12,9 +12,9 @@ import pytest
 
 from . import fixtures
 from .checks import (
-    _bind_record,  # pyright: ignore[reportPrivateUsage]
-    _example,  # pyright: ignore[reportPrivateUsage]
-    _workspace,  # pyright: ignore[reportPrivateUsage]
+    _bind_record,
+    _example,
+    _workspace,
     check_report,
     verify,
 )

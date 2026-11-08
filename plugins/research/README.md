@@ -81,7 +81,7 @@ the part other plugins honor when they write dated output.
 
 ## The script
 
-The skills drive `scripts/topic.py`, a standard-library Python 3.9+ script.
+The skills drive `scripts/topic.py`, a standard-library Python 3.14+ script.
 Every command prints JSON; `--help` lists the options. Fetches connect
 directly to the address they vetted, so `HTTPS_PROXY` and `HTTP_PROXY` are
 ignored; behind a required proxy, save each page yourself and record it with
@@ -200,5 +200,5 @@ Monorepos clone once, with worktrees containing all packages.
 
 ## Prerequisites
 
-- python3 3.9 or newer, for topics and dependency study.
+- python3 3.14 or newer, for topics and dependency study.
 - git, and a project with a supported manifest, for dependency study.

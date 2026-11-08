@@ -5,8 +5,6 @@ Adapted from the ``PrivatePath`` pattern used in vcspull and tmuxp.
 
 # ruff: noqa: INP001
 
-from __future__ import annotations
-
 import os
 import pathlib
 import typing as t
@@ -14,7 +12,7 @@ import typing as t
 if t.TYPE_CHECKING:
     PrivatePathBase = pathlib.Path
 else:
-    PrivatePathBase = type(pathlib.Path())  # pyright: ignore[reportUnreachable]
+    PrivatePathBase = type(pathlib.Path())
 
 
 class PrivatePath(PrivatePathBase):

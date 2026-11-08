@@ -1,9 +1,8 @@
 ---
 name: spike-probe
 description: >-
-  Use when spiking a feature or fix in the working tree to prove it quickly
-  before committing to an implementation.
-disable-model-invocation: true
+  Use when probing or spiking one approach to a feature or fix to surface
+  surprises fast, ahead of committing to an implementation.
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "Write", "AskUserQuestion"]
 metadata:
   argument-hint: "[<goal>] [--branch=<name>] [--keep-tree] [--replay]"

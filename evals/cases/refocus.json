@@ -1,0 +1,25 @@
+{
+  "skill_name": "refocus",
+  "trigger": {
+    "positive": [
+      {
+        "prompt": "has this branch drifted from the ticket?",
+        "top_k": 1
+      },
+      {
+        "prompt": "sort the commits against the goal and tell me the gaps",
+        "top_k": 1
+      },
+      {
+        "prompt": "refocus this branch on what the issue asked for",
+        "top_k": 1
+      }
+    ],
+    "negative": [
+      {
+        "prompt": "split these wip commits into atomic ones",
+        "owner": "soft-reset-and-recommit"
+      }
+    ]
+  }
+}

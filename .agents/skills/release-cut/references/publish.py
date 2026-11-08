@@ -21,9 +21,6 @@ and configuration stay the user's; failures are reported, never bypassed.
 A refusal or failed push changes no remote ref this script did not name.
 """
 
-# pyright: reportAny=false, reportUnusedCallResult=false
-from __future__ import annotations
-
 import argparse
 import contextlib
 import json
@@ -173,10 +170,10 @@ def split_remote(url: str) -> tuple[str, str, str] | None:
     match = _SCHEME_URL.match(url) or _SCP_URL.match(url)
     if not match:
         return None
-    parts = [p for p in match.group("path").rstrip("/").removesuffix(".git").split("/") if p]
+    parts = [p for p in str(match.group("path")).rstrip("/").removesuffix(".git").split("/") if p]
     if len(parts) < 2:  # noqa: PLR2004
         return None
-    return match.group("host"), "/".join(parts[:-1]), parts[-1]
+    return str(match.group("host")), "/".join(parts[:-1]), parts[-1]
 
 
 def _remote_refs(

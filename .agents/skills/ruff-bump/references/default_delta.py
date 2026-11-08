@@ -23,9 +23,6 @@ findings, ``now`` all current findings of the code, ``was`` the snapshot's.
 """
 
 # ruff: noqa: S603, S607
-# pyright: reportAny=false, reportExplicitAny=false, reportUnusedCallResult=false
-from __future__ import annotations
-
 import argparse
 import json
 import os

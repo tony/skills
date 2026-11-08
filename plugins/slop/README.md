@@ -186,6 +186,6 @@ $ git log -z --format=%H%x1f%B origin/main..HEAD | python3 scripts/slop_detect.p
 ## Prerequisites
 
 - git
-- python3 (3.9 or newer): runs the regex matcher and the `apply.sh` renderer
+- python3 (3.14 or newer): runs the regex matcher and the `apply.sh` renderer
 - Formatter, linter, type-checker: discovered at runtime from the
   project's conventions files.

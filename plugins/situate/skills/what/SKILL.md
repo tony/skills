@@ -1,9 +1,8 @@
 ---
 name: what
-description: "Use when the user asks what is going on and needs a five-line summary of the session, branch, pull request, and ticket."
+description: "Use when a user explicitly wants a five-line recap: session, branch, ticket, next options, narrowed to any named subject."
 allowed-tools: ["Bash", "Read", "Grep", "Glob"]
 argument-hint: "[what you are confused about]"
-disable-model-invocation: true
 ---
 
 

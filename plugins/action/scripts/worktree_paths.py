@@ -23,15 +23,13 @@ never takes the title as an argument.
 """
 
 # ruff: noqa: S603, S607
-# pyright: reportAny=false, reportUnusedCallResult=false
-from __future__ import annotations
-
 import argparse
 import hashlib
 import os
 import re
 import subprocess
 import sys
+from functools import reduce
 from pathlib import Path
 
 MAX_NAME = 60
@@ -105,10 +103,12 @@ def posix_cksum(data: bytes) -> int:
     >>> posix_cksum(b"123456789")
     930766865
     """
-    crc = 0
-    for byte in data + _length_bytes(len(data)):
-        crc = ((crc << 8) & 0xFFFFFFFF) ^ _TABLE[((crc >> 24) ^ byte) & 0xFF]
+    crc = reduce(_crc_step, data + _length_bytes(len(data)), 0)
     return ~crc & 0xFFFFFFFF
+
+
+def _crc_step(crc: int, byte: int) -> int:
+    return ((crc << 8) & 0xFFFFFFFF) ^ _TABLE[((crc >> 24) ^ byte) & 0xFF]
 
 
 def _length_bytes(length: int) -> bytes:
@@ -130,7 +130,7 @@ def _make_table() -> list[int]:
     return table
 
 
-_TABLE = _make_table()
+_TABLE: list[int] = _make_table()
 
 
 def flatten(branch: str) -> str:
