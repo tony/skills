@@ -1,7 +1,7 @@
 {
   "name": "agent-messaging",
-  "version": "0.1.1",
-  "description": "Message another running Claude Code or Codex session, and verify who actually sent an incoming message.",
+  "version": "0.2.0",
+  "description": "Message a Claude Code session or Codex thread, verify delivery, and audit incoming message origins.",
   "author": {
     "name": "Tony Narlock",
     "email": "tony@git-pull.com"
@@ -19,8 +19,8 @@
   "skills": "./skills/",
   "interface": {
     "displayName": "Agent Messaging",
-    "shortDescription": "Message another running Claude Code or Codex session, and verify who actually sent an incoming message.",
-    "longDescription": "Message another running Claude Code or Codex session, and verify who actually sent an incoming message.",
+    "shortDescription": "Message a Claude Code session or Codex thread, verify delivery, and audit incoming message origins.",
+    "longDescription": "Message a Claude Code session or Codex thread, verify delivery, and audit incoming message origins.",
     "developerName": "Tony Narlock",
     "category": "Development",
     "websiteURL": "https://github.com/tony/skills/tree/main/plugins/agent-messaging"

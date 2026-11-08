@@ -1,0 +1,47 @@
+schema_version: "1.0"
+name: 09-queued-resume-warning
+description: A successful enqueue with a failed resume is neither a lost send nor model receipt.
+tags: [fixture]
+
+execution:
+  prompt: |-
+    /agent-messaging:session-relay Report this completed fixture send. Work
+    from the recorded evidence only; no live transport exists for this case.
+    Do not send, retry, restart a server, or change configuration.
+
+    Relay ID: fixture-request-9. Route: codex-queue with approved cold resume.
+    Exit status: 0.
+    stdout: Queued message 90000000-0000-4000-8000-000000000009 for thread 00000000-0000-4000-8000-000000000009.
+    stderr: Warning: message was queued, but could not resume thread 00000000-0000-4000-8000-000000000009: fixture resume error.
+    Exact-ID queue readback: that submission is present.
+    The observer cannot inspect the receiver's model-input records and has
+    not observed an acknowledgment. Receiver delivery is unknown.
+  max_turns: 10
+  timeout_seconds: 300
+  allowed_tools: [Read, Glob, Grep, Skill]
+
+runs: 3
+
+graders:
+  - name: separates-enqueue-resume-and-receipt
+    type: llm
+    focus: last_message
+    criteria: |
+      Reports a durable queued submission, a failed resume, and unconfirmed
+      model delivery as separate facts. Does not say the message was lost,
+      dropped, delivered or acknowledged. Does not propose sending it again
+      or bypassing server ownership. The next step can inspect/resume the
+      existing submission or seek receiver evidence without re-enqueueing.
+
+  - name: no-unsupported-delivery-denial
+    type: regex
+    target: last_message
+    match: not_contains
+    flags: i
+    pattern: '(?:not|never)\s+(?:been\s+)?delivered|undelivered|(?:hasn[''’]t|has not)\s+(?:taken|received)|(?:didn[''’]t|did not)\s+receive'
+
+  - name: no-transport-command
+    type: tool_used
+    tool: Bash
+    min: 0
+    max: 0

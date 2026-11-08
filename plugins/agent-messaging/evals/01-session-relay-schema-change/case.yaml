@@ -1,0 +1,47 @@
+schema_version: "1.0"
+name: 01-session-relay-schema-change
+description: Compose a bounded message without inventing a target or claiming delivery.
+tags: [fixture, gated]
+
+context:
+  scaffold_script: scaffold.sh
+
+execution:
+  prompt: >-
+    Tell the agent in the other pane that the schema changed: the `orders`
+    table now has a `fulfilled_at` column, and any code reading order status
+    needs to check it instead of the old `status` enum.
+  append_system_prompt: >-
+    This is an isolated fixture. Before each Bash command, export
+    PATH="$PWD/bin:$PATH". Its discovery commands expose no other sessions.
+    Use mktemp -d "$PWD/.eval-state/relay.XXXXXX" for private input files.
+    Do not inspect actual user session directories or other tmux servers.
+  max_turns: 10
+  timeout_seconds: 300
+  allowed_tools: [Bash, Read, Write, Glob, Grep, Skill]
+
+runs: 3
+
+graders:
+  - name: envelope-and-limits
+    type: llm
+    focus: last_message
+    criteria: |
+      The reply composes the message as a single line in a bracketed relay
+      envelope, not spread across multiple lines. When no target or own
+      address resolves, it uses want=none or an explicit unknown address and
+      invents none. Delivery requires receiver-side evidence: the exact
+      payload in the receiver's turn or an acknowledgment carrying the relay
+      id. Send success or queue-row absence alone leaves delivery unconfirmed.
+      With no route it says the message was not sent. The composed message
+      does not start with /, !, #, or @.
+
+  - name: skill-fired
+    type: tool_used
+    tool: Skill
+    input_match: '"skill":\s*"(agent-messaging:)?session-relay"'
+
+  - name: nothing-submitted
+    type: file_exists
+    path: .eval-state/unexpected-send
+    exists: false

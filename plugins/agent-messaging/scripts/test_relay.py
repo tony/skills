@@ -197,3 +197,56 @@ def test_file_payload_preserves_shell_metacharacters(tmp_path: pathlib.Path) -> 
     assert json.loads(frame.read_text())["message"]["content"] == envelope.stdout.rstrip("\n")
     assert not (tmp_path / "injected").exists()
     assert not (tmp_path / "backtick").exists()
+
+
+@pytest.mark.integration(reason="executes an owned reply fixture and checks its grader oracle")
+@needs_tools
+@pytest.mark.parametrize(
+    ("change", "accepted"),
+    [
+        (None, True),
+        (("id=fixture-self-42", "id=fixture-request-11"), False),
+        (("hop=2", "hop=1"), False),
+        (("want=none", "want=reply"), False),
+        (("ACK fixture-request-11", "ACK wrong-request"), False),
+    ],
+)
+def test_reply_fixture_rejects_broken_envelopes(
+    tmp_path: pathlib.Path, change: tuple[str, str] | None, *, accepted: bool
+) -> None:
+    case_dir = RELAY.parents[1] / "evals/11-fresh-reply-id"
+    setup = subprocess.run(
+        [str(case_dir / "scaffold.sh")],
+        cwd=tmp_path,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert setup.returncode == 0, setup.stderr
+    line = (
+        "[relay/1 from=reply:claude-code@fixture-self to=reviewer "
+        "id=fixture-self-42 hop=2 want=none] ACK fixture-request-11"
+    )
+    if change:
+        line = line.replace(*change)
+    sent = subprocess.run(
+        [
+            str(tmp_path / "bin/codex"),
+            "queue",
+            "--thread",
+            "00000000-0000-4000-8000-000000000011",
+            "--message",
+            line,
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert sent.returncode == 0, sent.stderr
+    pattern = next(
+        line.removeprefix("    pattern: '").removesuffix("'")
+        for line in (case_dir / "case.yaml").read_text().splitlines()
+        if line.startswith("    pattern: '")
+    )
+    receipt = (tmp_path / ".eval-state/receipt.json").read_text()
+    assert bool(re.search(pattern, receipt)) is accepted

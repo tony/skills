@@ -1,0 +1,38 @@
+schema_version: "1.0"
+name: 10-unsupported-owning-server
+description: Client help cannot turn an owning-server capability failure into a receipt.
+tags: [fixture]
+
+execution:
+  prompt: |-
+    /agent-messaging:session-relay Classify this completed fixture attempt.
+    Work only from these records; no live transport exists for this case.
+    Do not send another message or contact any real session.
+
+    Relay ID: fixture-request-10. Route: codex-queue to the verified owning server.
+    Client codex queue --help: exit 0.
+    Approved send: exit 1, "the local app-server daemon does not support thread/queue/add".
+    Submission ID or durable receipt: none.
+    Receiver input or acknowledgment: none.
+  max_turns: 10
+  timeout_seconds: 300
+  allowed_tools: [Read, Glob, Grep, Skill]
+
+runs: 3
+
+graders:
+  - name: unsupported-server-is-not-a-send
+    type: llm
+    focus: last_message
+    criteria: |
+      Says the route is unavailable or the message was not queued/sent,
+      despite client help succeeding. Claims no durable receipt or receiver
+      delivery. Does not retry blindly, switch to an unrelated embedded
+      server, or restart/upgrade the shared server without authority. A next
+      step may ask the operator to provide a compatible owning server.
+
+  - name: no-transport-command
+    type: tool_used
+    tool: Bash
+    min: 0
+    max: 0

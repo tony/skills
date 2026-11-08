@@ -1,0 +1,39 @@
+schema_version: "1.0"
+name: 12-held-native-notice
+description: A later held notice and an idle subscription do not establish model receipt.
+tags: [fixture]
+
+execution:
+  prompt: |-
+    /agent-messaging:session-relay Report this recorded local native-send
+    result without contacting a live receiver or changing settings.
+
+    Relay ID: fixture-request-12.
+    Initial SendMessage result: success=true, message_id=fixture-native-12.
+    Later delivery notice for fixture-native-12: held by crossSessionInbound=hold.
+    Receiver preview: one undelivered message under explicit hold.
+    Separate notify_when_idle subscription: receiver is idle.
+    Receiver model-input record or assistant acknowledgment: none.
+  max_turns: 10
+  timeout_seconds: 300
+  allowed_tools: [Read, Glob, Grep, Skill]
+
+runs: 3
+
+graders:
+  - name: held-is-undelivered
+    type: llm
+    focus: last_message
+    criteria: |
+      Reports the message as held/undelivered, rather than delivered or
+      acknowledged. Correlates the later notice with the initial send and
+      does not use success=true, the preview or the separate idle notice as
+      model-receipt proof. Does not change shared inbound settings or send
+      another message. It may ask the operator to approve/release the held
+      message or obtain actual receiver evidence.
+
+  - name: no-transport-command
+    type: tool_used
+    tool: Bash
+    min: 0
+    max: 0
