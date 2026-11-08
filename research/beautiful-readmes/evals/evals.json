@@ -1,0 +1,67 @@
+{
+  "skill_name": "beautiful-readmes",
+  "evals": [
+    {
+      "id": 1,
+      "name": "write-new-cli",
+      "prompt": "Write a concise GitHub README for this project. Help a first-time user understand it and get a useful result. Read the supplied source and project facts. Save README.md and a short validation note under outputs/. Do not invent a published package, URL, or support claim.",
+      "expected_output": "A complete source-backed introduction and working first-use command with expected output.",
+      "files": [
+        "evals/fixtures/new-cli"
+      ],
+      "expectations": [
+        "Explains UTF-8 nonempty-line counting, including whitespace-only lines, and read-only behavior.",
+        "States Python 3.11+ and direct-checkout use without inventing a package, URL, dependency, or platform guarantee.",
+        "Provides a command with directory context that executes against the supplied sample and prints the documented value 2.",
+        "Separates commands from output and reports actual validation limits outside the README."
+      ]
+    },
+    {
+      "id": 2,
+      "name": "assess-existing",
+      "prompt": "Assess this README for reader usefulness, scannability, slop, and hard-coded cruft. Do not edit the project. Save audit.md under outputs/ with prioritized concerns, evidence status, and material worth preserving.",
+      "expected_output": "Finds the unsupported command and claims, prioritizes impact, preserves real requirements and collation warning.",
+      "files": [
+        "evals/fixtures/audit-only"
+      ],
+      "expectations": [
+        "Identifies the unsupported --recursive flag as a confirmed first-use defect and supplies the source-backed correction.",
+        "Distinguishes unsupported security/platform/production claims from proven false behavior.",
+        "Flags the transient test count and internal phase status without inferring AI authorship.",
+        "Prioritizes reader impact and explicitly preserves Python/UTF-8 requirements, Unicode collation caveat, and useful license route.",
+        "Leaves all input fixture files unchanged."
+      ]
+    },
+    {
+      "id": 3,
+      "name": "preserve-working-library",
+      "prompt": "Polish this README only where it improves the reader experience. Preserve what already works. Save the resulting README.md under outputs/ even if unchanged, plus a brief review.md explaining the decision and checks.",
+      "expected_output": "A sound README is preserved; any edits retain anchors, constraints, examples, license meaning, and routes.",
+      "files": [
+        "evals/fixtures/preserve-library"
+      ],
+      "expectations": [
+        "Retains the Usage and Limitations anchors, reference link, and license/attribution meaning.",
+        "Preserves Python 3.11+, local module use, code-point versus terminal-cell limitations, and whitespace normalization.",
+        "Preserves a complete example whose actual output matches the README.",
+        "Leaves working content unchanged or explains each edit with a concrete reader benefit; introduces no invented installation or support claims."
+      ]
+    },
+    {
+      "id": 4,
+      "name": "improve-generated-font",
+      "prompt": "Improve this font project README for readers choosing and using its assets. Keep the repository publishing workflow working. Copy the fixture into outputs/project/ and make your changes there; save review.md beside the project directory.",
+      "expected_output": "Removes repetitive promotion while preserving asset routes, format choices, compatibility, split licensing, and generation ownership.",
+      "files": [
+        "evals/fixtures/generated-font"
+      ],
+      "expectations": [
+        "Edits the owning template and regenerates README so both remain identical.",
+        "Preserves specimen and download routes plus the WOFF2 web versus OTF desktop choice.",
+        "Preserves variable-font compatibility and static-font fallback without claiming unperformed rendering tests.",
+        "Preserves separate font OFL and script MIT licensing and leaves license files unchanged.",
+        "Removes repetitive unsupported promotion without inventing package installation or missing font assets."
+      ]
+    }
+  ]
+}

@@ -1,0 +1,45 @@
+schema_version: '1.0'
+name: 04-generated-font
+description: generated font
+tags:
+- fixture
+- readme
+context:
+  scaffold_script: scaffold.sh
+execution:
+  prompt: Improve this font project README for readers choosing and using its assets. Keep the
+    repository publishing workflow working. Copy the fixture into outputs/project/ and make
+    your changes there; save review.md beside the project directory. Read the supplied inputs
+    in project/. README examples are for a user in the project root; outputs/ is only the handoff
+    directory. Keep project/ unchanged. Copy project/ to outputs/project/ before editing. Save
+    the review as outputs/review.md.
+  max_turns: 20
+  timeout_seconds: 180
+  allowed_tools:
+  - Read
+  - Glob
+  - Grep
+  - Bash
+  - Write
+  - Edit
+  - Skill
+  disallowed_tools:
+  - WebFetch
+  - WebSearch
+runs: 1
+graders:
+- name: artifact-written
+  type: file_exists
+  path: outputs/project/README.md
+- name: reader-contract
+  type: llm
+  focus:
+    source: file
+    path: outputs/project/README.md
+  criteria: The output README removes repetitive unsupported promotion while retaining specimen/download
+    routes, WOFF2 web versus OTF desktop choice, variable-font compatibility, static fallback,
+    and separate font OFL/script MIT licensing. It does not invent package installation, missing
+    assets or rendering tests.
+- name: review-note
+  type: file_exists
+  path: outputs/review.md
