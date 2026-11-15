@@ -1,6 +1,6 @@
 {
   "name": "goal-planner",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Print, synthesize, and audit portable goals; keep approved planning profiles and numbered goal specifications without activating work.",
   "author": {
     "name": "Tony Narlock",

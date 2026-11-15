@@ -16,7 +16,7 @@ if TYPE_CHECKING:
     from collections.abc import Generator
 
 if __package__:
-    from .fixtures import files_for, source_body  # ty: ignore[unresolved-import]
+    from .fixtures import files_for, source_body  # ty: ignore[import-not-found]
 else:
     from fixtures import files_for, source_body
 

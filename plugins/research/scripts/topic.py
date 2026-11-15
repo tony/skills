@@ -1330,7 +1330,7 @@ class VettedHTTPSHandler(urllib.request.HTTPSHandler):
             @t.override
             def connect(self) -> None:
                 sock = connect_vetted(self.host, self.port, resolve, self.timeout)
-                self.sock = self._context.wrap_socket(sock, server_hostname=self.host)  # ty: ignore[unresolved-attribute]
+                self.sock = self._context.wrap_socket(sock, server_hostname=self.host)  # ty: ignore[missing-attribute]
 
         return self.do_open(Conn, req, context=ssl.create_default_context())
 

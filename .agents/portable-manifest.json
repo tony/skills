@@ -877,7 +877,7 @@
         "references/topic.py": "plugins/research/scripts/topic.py",
         "references/verify.md": "plugins/research/references/verify.md"
       },
-      "bytes": 252518
+      "bytes": 252515
     },
     {
       "name": "research-release",

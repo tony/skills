@@ -10,13 +10,13 @@ from pathlib import Path
 from typing import override
 
 if __package__:
-    from .check_results import (  # ty: ignore[unresolved-import]
+    from .check_results import (  # ty: ignore[import-not-found]
         EvalError,
         check_case,
         check_report,
         goal_payload,
     )
-    from .fixtures import files_for, source_body  # ty: ignore[unresolved-import]
+    from .fixtures import files_for, source_body  # ty: ignore[import-not-found]
 else:
     from check_results import (
         EvalError,
