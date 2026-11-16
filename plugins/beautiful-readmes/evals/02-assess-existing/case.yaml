@@ -1,0 +1,49 @@
+schema_version: '1.0'
+name: 02-assess-existing
+description: assess existing
+tags:
+- fixture
+- readme
+context:
+  scaffold_script: scaffold.sh
+execution:
+  prompt: Assess this README for reader usefulness, scannability, slop, and hard-coded cruft.
+    Do not edit the project. Save audit.md under outputs/ with prioritized concerns, evidence
+    status, and material worth preserving. Read the supplied inputs in project/. README examples
+    are for a user in the project root; outputs/ is only the handoff directory. Keep project/
+    unchanged.
+  max_turns: 20
+  timeout_seconds: 180
+  allowed_tools:
+  - Read
+  - Glob
+  - Grep
+  - Bash
+  - Write
+  - Edit
+  - Skill
+  disallowed_tools:
+  - WebFetch
+  - WebSearch
+runs: 1
+graders:
+- name: artifact-written
+  type: file_exists
+  path: outputs/audit.md
+- name: unsupported-flag-found
+  type: regex
+  target:
+    source: file
+    path: outputs/audit.md
+  pattern: --recursive
+- name: reader-contract
+  type: llm
+  focus:
+    source: file
+    path: outputs/audit.md
+  criteria: Every requirement must hold. Identifies the unsupported --recursive flag as a confirmed
+    first-use defect and supplies the source-backed correction. Distinguishes unsupported security/platform/production
+    claims from proven false behavior. Flags the transient test count and internal phase status
+    without inferring AI authorship. Prioritizes reader impact and explicitly preserves Python/UTF-8
+    requirements, Unicode collation caveat, and useful license route. Judge only the visible
+    assessment; input preservation is checked separately against the fixture hashes.

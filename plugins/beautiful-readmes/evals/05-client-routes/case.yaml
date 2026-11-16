@@ -1,0 +1,54 @@
+schema_version: '1.0'
+name: 05-client-routes
+description: client routes
+tags:
+- fixture
+- readme
+context:
+  scaffold_script: scaffold.sh
+execution:
+  prompt: Polish the README for the reader experience. Read project/PROJECT.md and project/README.md;
+    save outputs/README.md and outputs/review.md. Preserve what already works and keep project/
+    unchanged. Examples are for the project root.
+  max_turns: 20
+  timeout_seconds: 180
+  allowed_tools:
+  - Read
+  - Glob
+  - Grep
+  - Bash
+  - Write
+  - Edit
+  - Skill
+  disallowed_tools:
+  - WebFetch
+  - WebSearch
+runs: 1
+graders:
+- name: artifact-written
+  type: file_exists
+  path: outputs/README.md
+- name: codex-route
+  type: regex
+  target:
+    source: file
+    path: outputs/README.md
+  pattern: python3 bridge\.py --client codex
+- name: claude-code-route
+  type: regex
+  target:
+    source: file
+    path: outputs/README.md
+  pattern: python3 bridge\.py --client claude-code
+- name: reader-contract
+  type: llm
+  focus:
+    source: file
+    path: outputs/README.md
+  criteria: Both Claude Code and Codex routes remain clearly labeled alternatives with complete
+    commands and the configuration reference. Python 3.11+ and print-only behavior remain accurate.
+    No invented installation, launch, package or support claims. Leaving the README unchanged
+    is valid. Judge its visible content; the separate review note need not be repeated in it.
+- name: review-note
+  type: file_exists
+  path: outputs/review.md
