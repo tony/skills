@@ -873,6 +873,7 @@
       "bundled": {
         "references/analysis.md": "plugins/research/references/analysis.md",
         "references/assessment.md": "plugins/research/references/assessment.md",
+        "references/authenticated-sources.md": "plugins/research/references/authenticated-sources.md",
         "references/continue.md": "plugins/research/references/continue.md",
         "references/layout.md": "plugins/research/references/layout.md",
         "references/prose-rules.md": "plugins/research/references/prose-rules.md",
@@ -884,7 +885,7 @@
         "references/topic.py": "plugins/research/scripts/topic.py",
         "references/verify.md": "plugins/research/references/verify.md"
       },
-      "bytes": 253786
+      "bytes": 256206
     },
     {
       "name": "research-release",
@@ -1888,6 +1889,7 @@
     "plugins/repo-skills/scripts/evidence.py": 1,
     "plugins/research/references/analysis.md": 1,
     "plugins/research/references/assessment.md": 1,
+    "plugins/research/references/authenticated-sources.md": 1,
     "plugins/research/references/continue.md": 1,
     "plugins/research/references/layout.md": 1,
     "plugins/research/references/release.md": 1,
