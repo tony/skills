@@ -256,6 +256,7 @@ class Args(argparse.Namespace):
     author: str | None = None
     file: str | None = None
     fetch: bool = False
+    via: str | None = None
     quote: list[str] | None = None
     set_quotes: bool = False
     replaces: str | None = None
@@ -1418,7 +1419,8 @@ def url_suffix(url: str) -> str:
 
 
 VERSION_KEYS = (
-    "ref", "sha256", "capture", "title", "author", "quotes", "replaces", "kind", "unretrieved",
+    "ref", "sha256", "capture", "via", "title", "author", "quotes", "replaces", "kind",
+    "unretrieved",
 )  # fmt: skip
 
 
@@ -1464,7 +1466,7 @@ def enclosing_run(path: Path) -> Path | None:
     )
 
 
-FIELD_KEYS = {"add": ("quote", "title", "author"), "run": ("quote",), "searched": ("query",)}
+FIELD_KEYS = {"add": ("quote", "title", "author", "via"), "run": ("quote",), "searched": ("query",)}
 
 
 def apply_fields(a: Args, command: str) -> None:
@@ -1514,6 +1516,9 @@ def add_guards(a: Args, prev: Row, latest: dict[str, Row]) -> None:
     """Refuse an ``add`` that would record a contradiction."""
     if a.replaces and a.replaces not in latest:
         msg = f"--replaces {a.replaces}: no such source"
+        raise ValueError(msg)
+    if a.via and not a.file:
+        msg = "--via names the tool that read --file; save what it returned and pass --file"
         raise ValueError(msg)
     if a.replaces and a.replaces == _str(prev, "id"):
         msg = f"--replaces {a.replaces}: that is this URL's own id; re-add without --replaces"
@@ -1571,6 +1576,7 @@ def cmd_add(a: Args, fetch: Fetch = http_fetch, extra: Row | None = None) -> int
         "retrieved": now_utc() if got else prev.get("retrieved", now_utc()),
         "sha256": sha256(got[0]) if got else prev.get("sha256"),
         "capture": got[2] if got else prev.get("capture"),
+        "via": a.via if got else prev.get("via"),
         "response": (got[3] or None) if got else prev.get("response"),
         "unretrieved": None if got else a.unretrieved or prev.get("unretrieved"),
         "quotes": merge_quotes([] if a.set_quotes else quotes_of(prev), a.quote or []),
@@ -1777,7 +1783,8 @@ def capture_warnings(row: Row, got: tuple[bytes, str, str, Row] | None, prev: Ro
         out.append(
             f"redirected: recorded the final URL {row['url']}; you asked for {row['requested_url']}"
         )
-    if got and got[2] == "file" and not prev and not _str(row, "url").startswith("measured:"):
+    supplied = got and got[2] == "file" and not prev and not row.get("via")
+    if supplied and not _str(row, "url").startswith("measured:"):
         out.append("you supplied this capture; make sure it is what the URL serves, or use --fetch")
     if row.get("unretrieved"):
         out.append("not retrieved: list it as a gap; it cannot support a claim")
@@ -2293,7 +2300,11 @@ def check_outputs(run: Path, row: Row) -> tuple[str, str]:
 
 
 def check_source(run: Path, row: Row, fetch: Fetch | None) -> Row:
-    """Check one source offline, then live when ``fetch`` is given; the first failure wins."""
+    """Check one source offline, then live when ``fetch`` is given; the first failure wins.
+
+    A capture read ``via`` a tool is checked offline only: an anonymous fetch of a
+    page behind an account gets a sign-in page or an error, never the page.
+    """
     head: Row = {"id": _str(row, "id"), "version": version_key(row), "checked": now_utc()}
     head["url"] = _str(row, "url")
     if row.get("unretrieved") and not _str(row, "file"):
@@ -2305,8 +2316,11 @@ def check_source(run: Path, row: Row, fetch: Fetch | None) -> Row:
     if status == "ok" and measured:
         status, detail = check_outputs(run, row)
         detail = detail or "capture intact"
-    compared = not row.get("carried_from") if measured else fetch is not None
-    if status in ("ok", "unchecked") and fetch is not None and not measured:
+    via = _str(row, "via")
+    compared = not row.get("carried_from") if measured else fetch is not None and not via
+    if via and status == "ok" and fetch is not None:
+        detail = f"capture intact; not fetched: re-read it through {via} to compare"
+    elif status in ("ok", "unchecked") and fetch is not None and not measured:
         offline = status
         status, detail, extra = check_live(row, fetch)
         if status == "reachable" and offline == "ok":
@@ -4272,7 +4286,9 @@ def build_parser() -> argparse.ArgumentParser:  # noqa: PLR0915 - one statement 
     _ = ad.add_argument("--url", default="", help="omit only for --kind measured with --file")
     _ = ad.add_argument("--link", metavar="S<n>:<k>", help="the k-th URL links lists for S<n>")
     _ = ad.add_argument(
-        "--fields", metavar="FILE", help="JSON object with quote (string or list), title, author"
+        "--fields",
+        metavar="FILE",
+        help="JSON object with quote (string or list), title, author, via",
     )
     _ = ad.add_argument("--ref", help="tag, commit, edition, or version the claim rests on")
     _ = ad.add_argument("--title")
@@ -4282,6 +4298,9 @@ def build_parser() -> argparse.ArgumentParser:  # noqa: PLR0915 - one statement 
     _ = grp.add_argument("--fetch", action="store_true", help="download the capture now")
     _ = grp.add_argument(
         "--unretrieved", metavar="REASON", help="could not capture it: paywall, login, removed, ..."
+    )
+    _ = ad.add_argument(
+        "--via", metavar="TOOL", help="the tool that read --file: a gh command, an MCP tool"
     )
     _ = ad.add_argument("--quote", action="append", help="exact text a claim rests on (repeatable)")
     _ = ad.add_argument("--set-quotes", action="store_true", help="replace the recorded quotes")

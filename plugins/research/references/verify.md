@@ -8,7 +8,7 @@ Three checks, in this order: the references still say what you cite them for, no
 $ python3 <topic.py> verify --run <run_dir>
 ```
 
-`--offline` checks only the captures on disk: present, unaltered, quotes still inside. Without it, each URL is also fetched. Results append to `<run>/references/checks.jsonl`; the command exits 1 when any check fails. Each result leaves the source in a state that `layout.md` (Source states) defines; only a live pass that compared content makes it verified.
+`--offline` checks only the captures on disk: present, unaltered, quotes still inside. Without it, each URL is also fetched. Results append to `<run>/references/checks.jsonl`; the command exits 1 when any check fails. Each result leaves the source in a state that `layout.md` (Source states) defines; only a live pass that compared content makes it verified. A source recorded `--via` a tool is never fetched and stays intact. To compare it, read it again through that tool and re-add the result with `--file` and `--via`; `add` refuses a recorded quote the new capture lacks.
 
 Handle each failure by its status:
 

@@ -296,6 +296,27 @@ def test_a_captured_source_verifies_on_a_live_quote(root: Path, tmp_path: Path) 
     assert topic.source_states(run, date.today().isoformat()) == {"S1": "verified"}  # noqa: DTZ011
 
 
+def test_a_source_read_through_a_tool_is_checked_offline_only(root: Path, tmp_path: Path) -> None:
+    run = new_run(root)
+    via = "gh api repos/o/private/contents/README.md"
+    code, row = add(
+        run, "--url", "https://github.com/o/private/blob/abc1234/README.md", "--kind", "vendor",
+        "--file", capture(tmp_path), "--via", via, "--quote", "readers do not block writers",
+    )  # fmt: skip
+    assert (code, row["via"]) == (0, via)
+    assert not [w for w in row["warnings"] if "you supplied" in w]
+    code, result = call(topic.cmd_verify, stub(404), "verify", "--run", str(run))
+    assert (code, result["counts"]) == (0, {"ok": 1})
+    assert topic.source_states(run, date.today().isoformat()) == {"S1": "intact"}  # noqa: DTZ011
+
+
+def test_via_needs_the_capture_the_tool_returned(root: Path) -> None:
+    run = new_run(root)
+    code, row = add(run, "--url", "https://a.example/x", "--fetch", "--via", "gh")
+    assert code == 2
+    assert "--via" in row["error"]
+
+
 def test_add_fetch_records_the_capture_and_what_the_server_said(root: Path) -> None:
     run = new_run(root)
     code, row = call(
