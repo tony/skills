@@ -1790,7 +1790,7 @@ def capture_warnings(row: Row, got: tuple[bytes, str, str, Row] | None, prev: Ro
             if row.get("via")
             else "you supplied this capture; make sure it is what the URL serves, or use --fetch"
         )
-    if got and prev.get("via") and not row.get("via"):
+    if got and got[2] == "file" and prev.get("via") and not row.get("via"):
         out.append("no --via: verify now fetches this URL; pass --via again if a tool read it")
     if row.get("unretrieved"):
         out.append("not retrieved: list it as a gap; it cannot support a claim")
