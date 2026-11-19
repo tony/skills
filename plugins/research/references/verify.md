@@ -12,7 +12,7 @@ $ python3 <topic.py> verify --run <run_dir>
 
 Handle each failure by its status:
 
-- **Behind an account** (a private repository's 404, a redirect to a sign-in page, a 401 or 403): re-add it through its tool the same way, per `authenticated-sources.md`.
+- **Behind an account** (a private repository's 404, a redirect to a sign-in page, a 401 or 403): check this before **vanished**, **moved**, or **unreachable**, and re-add it through its tool the same way, per `authenticated-sources.md`.
 - **moved**: add the source at its new URL with `--replaces <old id>`, then update the report's citations.
 - **vanished**: find the same material at a pinned location (an archive, a release tag) and add it with `--replaces <old id>`, or retract the claims that rested on it.
 - **changed**: read the new version and re-capture it (`add --fetch` with the same URL and ref). Keep the id; revise claims it no longer supports, and pass `--set-quotes` with a `--fields` file holding passages from the new capture.
