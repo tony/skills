@@ -1046,7 +1046,7 @@ def _stem(title: str, url: str) -> str:
 
 
 CARD_KEYS = (
-    "id", "title", "author", "url", "ref", "retrieved", "sha256", "file", "response",
+    "id", "title", "author", "url", "ref", "retrieved", "sha256", "file", "via", "response",
     "unretrieved", "command", "exit", "outputs", "quotes", "kind", "carried_from", "replaces",
     "replaced_by", "requested_url",
 )  # fmt: skip
@@ -1541,6 +1541,7 @@ def cmd_add(a: Args, fetch: Fetch = http_fetch, extra: Row | None = None) -> int
     or a corrected title, author, or quote append a version under the same id. A
     re-add without a capture keeps the old one, along with whether it was carried.
     ``extra`` carries fields only ``run`` records: the command, its exit, its outputs.
+    A new ``--file`` capture keeps ``via`` only when ``--via`` names the tool again.
     A fetch that followed a redirect records the final address as the source's
     ``url`` and keeps the address asked for as ``requested_url``.
     """
@@ -1576,7 +1577,7 @@ def cmd_add(a: Args, fetch: Fetch = http_fetch, extra: Row | None = None) -> int
         "retrieved": now_utc() if got else prev.get("retrieved", now_utc()),
         "sha256": sha256(got[0]) if got else prev.get("sha256"),
         "capture": got[2] if got else prev.get("capture"),
-        "via": a.via if got else prev.get("via"),
+        "via": (a.via or None) if got else prev.get("via"),
         "response": (got[3] or None) if got else prev.get("response"),
         "unretrieved": None if got else a.unretrieved or prev.get("unretrieved"),
         "quotes": merge_quotes([] if a.set_quotes else quotes_of(prev), a.quote or []),
@@ -1783,9 +1784,14 @@ def capture_warnings(row: Row, got: tuple[bytes, str, str, Row] | None, prev: Ro
         out.append(
             f"redirected: recorded the final URL {row['url']}; you asked for {row['requested_url']}"
         )
-    supplied = got and got[2] == "file" and not prev and not row.get("via")
-    if supplied and not _str(row, "url").startswith("measured:"):
-        out.append("you supplied this capture; make sure it is what the URL serves, or use --fetch")
+    if got and got[2] == "file" and not prev and not _str(row, "url").startswith("measured:"):
+        out.append(
+            "read via a tool: checks never fetch it; a public page belongs on --fetch"
+            if row.get("via")
+            else "you supplied this capture; make sure it is what the URL serves, or use --fetch"
+        )
+    if got and prev.get("via") and not row.get("via"):
+        out.append("no --via: verify now fetches this URL; pass --via again if a tool read it")
     if row.get("unretrieved"):
         out.append("not retrieved: list it as a gap; it cannot support a claim")
     elif not got and not row.get("sha256"):
@@ -2260,7 +2266,7 @@ def check_live(row: Row, fetch: Fetch) -> tuple[str, str, Row]:
 
 
 def version_key(row: Row) -> str:
-    """Short hash of what a check tests: the url, ref, capture hash, and quotes.
+    """Short hash of what a check tests: the url, ref, capture hash, quotes, and tool.
 
     Examples
     --------
@@ -2269,8 +2275,12 @@ def version_key(row: Row) -> str:
     True
     >>> version_key(a) == version_key({**a, "quotes": []})
     False
+    >>> version_key(a) == version_key({**a, "via": "gh"})
+    False
     """
     parts = [_str(row, "url"), _str(row, "ref"), _str(row, "sha256"), *quotes_of(row)]
+    if row.get("via"):
+        parts.append(f"via:{row['via']}")
     return sha256(json.dumps(parts).encode())[:12]
 
 
@@ -2318,7 +2328,7 @@ def check_source(run: Path, row: Row, fetch: Fetch | None) -> Row:
         detail = detail or "capture intact"
     via = _str(row, "via")
     compared = not row.get("carried_from") if measured else fetch is not None and not via
-    if via and status == "ok" and fetch is not None:
+    if via and not measured and status == "ok" and fetch is not None:
         detail = f"capture intact; not fetched: re-read it through {via} to compare"
     elif status in ("ok", "unchecked") and fetch is not None and not measured:
         offline = status

@@ -310,11 +310,15 @@ def test_a_source_read_through_a_tool_is_checked_offline_only(root: Path, tmp_pa
     assert topic.source_states(run, date.today().isoformat()) == {"S1": "intact"}  # noqa: DTZ011
 
 
-def test_via_needs_the_capture_the_tool_returned(root: Path) -> None:
-    run = new_run(root)
-    code, row = add(run, "--url", "https://a.example/x", "--fetch", "--via", "gh")
-    assert code == 2
-    assert "--via" in row["error"]
+def test_a_new_tool_read_needs_a_new_check(root: Path, tmp_path: Path) -> None:
+    run, url = new_run(root), "https://a.example/x"
+    assert call(topic.cmd_add, stub(), "add", "--run", str(run), "--url", url, "--fetch")[0] == 0
+    assert call(topic.cmd_verify, stub(), "verify", "--run", str(run))[0] == 0
+    assert add(run, "--url", url, "--file", capture(tmp_path), "--via", "gh")[0] == 0
+    assert topic.source_states(run, date.today().isoformat()) == {"S1": "fresh"}  # noqa: DTZ011
+    code, row = add(run, "--url", url, "--file", capture(tmp_path))
+    assert (code, row["via"]) == (0, None)
+    assert [w for w in row["warnings"] if w.startswith("no --via")]
 
 
 def test_add_fetch_records_the_capture_and_what_the_server_said(root: Path) -> None:
