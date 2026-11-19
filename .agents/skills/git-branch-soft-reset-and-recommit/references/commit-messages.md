@@ -136,10 +136,10 @@ the PR body, commit trailers, subject prefixes, and the branch name.
 
 ### Linked tickets
 
-Resolve GitHub issues through `gh issue view`. For other trackers, use
-whatever MCP server the session has connected, read-only; fall back to
-a tracker CLI, and when neither exists, ask for the ticket text rather
-than skipping the context.
+Resolve GitHub issues through `gh issue view`, and other trackers
+through a connected tool per
+[authenticated-sources.md](./authenticated-sources.md), read-only. When
+none exists, ask for the ticket text rather than skipping the context.
 
 Preserve linkage through the rewrite, and prefer a trailer for it. A
 `Refs: PROJ-12` trailer survives reflow; a Jira Smart Commit directive

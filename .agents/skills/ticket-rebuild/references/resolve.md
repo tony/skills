@@ -20,10 +20,9 @@ Both skills start here. Read what applies:
 
 ## Finding the backend
 
-Discover what is connected, never assume it. List the configured MCP servers
-(`claude mcp list` in Claude Code, `codex mcp list` in Codex) and read the tool
-list the client exposes for a read tool and a create or update tool; for a CLI,
-run `which <cli>` and `<cli> <command> --help`. Prefer what is connected. The
+Find what is connected per [authenticated-sources.md](./authenticated-sources.md),
+looking for a read tool and a create or update tool; for a CLI,
+`<cli> <command> --help` confirms each flag. Prefer what is connected. The
 provider file names what to look for and the check that confirms it. When a
 tool, flag, or endpoint is absent, there is no write path for it (see "When the
 body cannot be written").

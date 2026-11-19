@@ -61,7 +61,7 @@ Plan: review-skill, window 2026-04-01..2026-06-30. Nothing is written yet.
 
 ## Instruments
 
-- git and gh to probe; trackers and timing logs only from exports you provide.
+- git, gh, and any connected tracker tool to probe; timing logs only from exports you provide.
 
 ## Output
 

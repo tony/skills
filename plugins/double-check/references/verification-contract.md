@@ -21,8 +21,10 @@ standalone, in the shape the original request implied, as if answering
 for the first time.
 
 - Baseline is the source, not the transcript. Re-open the files,
-  issues, data, or specs and re-derive every claim. The prior answer
-  is untrusted scratch for recalling which sources exist.
+  issues, data, or specs and re-derive every claim; an issue or thread
+  behind an account re-opens through its connected tool
+  ([authenticated-sources.md](authenticated-sources.md)). The prior
+  answer is untrusted scratch for recalling which sources exist.
 - Verification is performed, not asserted. Cite what you re-opened and
   what it said, or the command you ran and its output. "Verified
   earlier in this conversation" is not evidence.

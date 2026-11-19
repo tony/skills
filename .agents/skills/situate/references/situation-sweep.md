@@ -231,10 +231,11 @@ $ gh issue view <n> \
 A bare `#123` belongs to the repository whose commit or PR supplied it,
 not necessarily the checkout. Keep that hosted repository binding.
 
-Resolve Linear and other trackers through whatever MCP server the
-session has connected. When none is available, report the ID unresolved,
-never a guess at what it means. Never invent a link: an ID that appears
-nowhere in the evidence does not go in the report.
+Resolve Linear and other trackers through a connected tool per
+[authenticated-sources.md](./authenticated-sources.md). When none is
+available, report the ID unresolved, never a guess at what it means.
+Never invent a link: an ID that appears nowhere in the evidence does not
+go in the report.
 
 ## 5. Conventions
 
