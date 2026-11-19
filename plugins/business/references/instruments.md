@@ -51,9 +51,8 @@ say so in the plan and shrink the window; never sample silently.
 
 ### Ticket trackers
 
-Look for MCP servers or CLIs for Jira, Linear, or whatever the team
-uses; check the host's MCP listing and the project's
-AGENTS.md/CLAUDE.md for tracker mentions. Nothing found →
+Find a connected tool for Jira, Linear, or whatever the team uses
+per [authenticated-sources.md](authenticated-sources.md). Nothing found →
 unavailable.
 
 ### CI telemetry, session logs, time tracking

@@ -8,16 +8,17 @@ Three checks, in this order: the references still say what you cite them for, no
 $ python3 <topic.py> verify --run <run_dir>
 ```
 
-`--offline` checks only the captures on disk: present, unaltered, quotes still inside. Without it, each URL is also fetched. Results append to `<run>/references/checks.jsonl`; the command exits 1 when any check fails. Each result leaves the source in a state that `layout.md` (Source states) defines; only a live pass that compared content makes it verified.
+`--offline` checks only the captures on disk: present, unaltered, quotes still inside. Without it, each URL is also fetched. Results append to `<run>/references/checks.jsonl`; the command exits 1 when any check fails. Each result leaves the source in a state that `layout.md` (Source states) defines; only a live pass that compared content makes it verified. A source recorded `--via` a tool is never fetched; to compare it, read it again through that tool and re-add it with `--file` and `--via`. `add` refuses a recorded quote the new capture lacks.
 
 Handle each failure by its status:
 
+- **Behind an account** (a private repository's 404, a redirect to a sign-in page, a 401 or 403): check this before **vanished**, **moved**, or **unreachable**, and re-add it through its tool the same way, per `authenticated-sources.md`.
 - **moved**: add the source at its new URL with `--replaces <old id>`, then update the report's citations.
 - **vanished**: find the same material at a pinned location (an archive, a release tag) and add it with `--replaces <old id>`, or retract the claims that rested on it.
 - **changed**: read the new version and re-capture it (`add --fetch` with the same URL and ref). Keep the id; revise claims it no longer supports, and pass `--set-quotes` with a `--fields` file holding passages from the new capture.
 - **misquoted**: the quote is not where you said it is. Re-add with `--set-quotes` and a `--fields` file holding the passage as it appears, or revise the claim.
 - **unverifiable**: the capture is a PDF and a quote rests on it. `topic.py` does not extract PDF text, so no quote can be matched. Paste the text you read into a `.txt` file and add it with `--file`, saying in its card that it is your extraction of the PDF, or find the same material in an HTML or text source; until then the claim carries `[unverified]`.
-- **unreachable**: an auth wall or server error. Report it as unchecked, not as passing.
+- **unreachable**: a server error, or an auth wall no connected tool passes. Report it as unchecked, not as passing.
 - **reachable**: not a failure, and not evidence for a claim. Re-add the source with `--fetch` or with a quote so a later pass compares content.
 
 A re-add of the same URL with a quote (`add --fields <file>`, per `start.md` step 4) adds that passage to the ones recorded, as a new version under the same id. Name a retired id in `## Since` as history (`S11 became [S20]`); everywhere else, cite the id that replaced it.

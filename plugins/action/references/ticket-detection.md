@@ -39,11 +39,10 @@ The first source that yields a concrete ticket wins:
    URL, `owner/repo#45`.
 2. **Conversation context**: pasted issue text, a link shared earlier,
    the item the user just agreed to work.
-3. **Available MCP tools**: a tracker MCP server whose read tools can
-   fetch or search issues.
-4. **CLIs**: `gh` preferred (`gh issue view`, `gh issue list`); other
-   tracker CLIs, read-only subcommands only.
-5. **Repo remote heuristics**: an `origin` on github.com suggests GitHub
+3. **Connected tools**: a tracker MCP server or CLI found per
+   [authenticated-sources.md](authenticated-sources.md), read-only
+   (`gh issue view` and `gh issue list` for GitHub).
+4. **Repo remote heuristics**: an `origin` on github.com suggests GitHub
    issues; a tracker ID pattern in recent branch names or commit
    trailers suggests that tracker.
 

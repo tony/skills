@@ -296,6 +296,31 @@ def test_a_captured_source_verifies_on_a_live_quote(root: Path, tmp_path: Path) 
     assert topic.source_states(run, date.today().isoformat()) == {"S1": "verified"}  # noqa: DTZ011
 
 
+def test_a_source_read_through_a_tool_is_checked_offline_only(root: Path, tmp_path: Path) -> None:
+    run = new_run(root)
+    via = "gh api repos/o/private/contents/README.md"
+    code, row = add(
+        run, "--url", "https://github.com/o/private/blob/abc1234/README.md", "--kind", "vendor",
+        "--file", capture(tmp_path), "--via", via, "--quote", "readers do not block writers",
+    )  # fmt: skip
+    assert (code, row["via"]) == (0, via)
+    assert not [w for w in row["warnings"] if "you supplied" in w]
+    code, result = call(topic.cmd_verify, stub(404), "verify", "--run", str(run))
+    assert (code, result["counts"]) == (0, {"ok": 1})
+    assert topic.source_states(run, date.today().isoformat()) == {"S1": "intact"}  # noqa: DTZ011
+
+
+def test_a_new_tool_read_needs_a_new_check(root: Path, tmp_path: Path) -> None:
+    run, url = new_run(root), "https://a.example/x"
+    assert call(topic.cmd_add, stub(), "add", "--run", str(run), "--url", url, "--fetch")[0] == 0
+    assert call(topic.cmd_verify, stub(), "verify", "--run", str(run))[0] == 0
+    assert add(run, "--url", url, "--file", capture(tmp_path), "--via", "gh")[0] == 0
+    assert topic.source_states(run, date.today().isoformat()) == {"S1": "fresh"}  # noqa: DTZ011
+    code, row = add(run, "--url", url, "--file", capture(tmp_path))
+    assert (code, row["via"]) == (0, None)
+    assert [w for w in row["warnings"] if w.startswith("no --via")]
+
+
 def test_add_fetch_records_the_capture_and_what_the_server_said(root: Path) -> None:
     run = new_run(root)
     code, row = call(

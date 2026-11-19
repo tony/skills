@@ -7,6 +7,7 @@
         "plugins/action/skills/worktree/SKILL.md"
       ],
       "bundled": {
+        "references/authenticated-sources.md": "plugins/action/references/authenticated-sources.md",
         "references/implement-and-commit.md": "plugins/action/references/implement-and-commit.md",
         "references/prose-rules.md": "plugins/action/references/prose-rules.md",
         "references/ticket-detection.md": "plugins/action/references/ticket-detection.md",
@@ -14,7 +15,7 @@
         "references/worktree-setup.md": "plugins/action/references/worktree-setup.md",
         "references/worktree_paths.py": "plugins/action/scripts/worktree_paths.py"
       },
-      "bytes": 49038
+      "bytes": 50448
     },
     {
       "name": "action-worktrees",
@@ -22,6 +23,7 @@
         "plugins/action/skills/worktrees/SKILL.md"
       ],
       "bundled": {
+        "references/authenticated-sources.md": "plugins/action/references/authenticated-sources.md",
         "references/implement-and-commit.md": "plugins/action/references/implement-and-commit.md",
         "references/prose-rules.md": "plugins/action/references/prose-rules.md",
         "references/ticket-detection.md": "plugins/action/references/ticket-detection.md",
@@ -29,7 +31,7 @@
         "references/worktree-setup.md": "plugins/action/references/worktree-setup.md",
         "references/worktree_paths.py": "plugins/action/scripts/worktree_paths.py"
       },
-      "bytes": 50290
+      "bytes": 51700
     },
     {
       "name": "agent-messaging-session-relay",
@@ -125,6 +127,7 @@
         "plugins/business/skills/research/SKILL.md"
       ],
       "bundled": {
+        "references/authenticated-sources.md": "plugins/business/references/authenticated-sources.md",
         "references/business.py": "plugins/business/scripts/business.py",
         "references/instruments.md": "plugins/business/references/instruments.md",
         "references/interim-format.md": "plugins/business/references/interim-format.md",
@@ -132,7 +135,7 @@
         "references/prose-rules.md": "plugins/business/references/prose-rules.md",
         "references/provenance.md": "plugins/business/references/provenance.md"
       },
-      "bytes": 127719
+      "bytes": 129136
     },
     {
       "name": "changelog",
@@ -238,10 +241,11 @@
         "plugins/double-check/skills/double-check/SKILL.md"
       ],
       "bundled": {
+        "references/authenticated-sources.md": "plugins/double-check/references/authenticated-sources.md",
         "references/prose-rules.md": "plugins/double-check/references/prose-rules.md",
         "references/verification-contract.md": "plugins/double-check/references/verification-contract.md"
       },
-      "bytes": 13022
+      "bytes": 14595
     },
     {
       "name": "double-check-align",
@@ -249,10 +253,11 @@
         "plugins/double-check/skills/align/SKILL.md"
       ],
       "bundled": {
+        "references/authenticated-sources.md": "plugins/double-check/references/authenticated-sources.md",
         "references/prose-rules.md": "plugins/double-check/references/prose-rules.md",
         "references/verification-contract.md": "plugins/double-check/references/verification-contract.md"
       },
-      "bytes": 12534
+      "bytes": 14107
     },
     {
       "name": "gh-create-issue",
@@ -296,6 +301,7 @@
         "plugins/git-branch/skills/redo-from-scratch/SKILL.md"
       ],
       "bundled": {
+        "references/authenticated-sources.md": "plugins/git-branch/references/authenticated-sources.md",
         "references/branch-safety.md": "plugins/git-branch/references/branch-safety.md",
         "references/branch_gate.py": "plugins/git-branch/scripts/branch_gate.py",
         "references/commit-messages.md": "plugins/git-branch/references/commit-messages.md",
@@ -305,7 +311,7 @@
         "references/rebuild-contract.md": "plugins/git-branch/references/rebuild-contract.md",
         "references/split-mechanics.md": "plugins/git-branch/references/split-mechanics.md"
       },
-      "bytes": 75164
+      "bytes": 76600
     },
     {
       "name": "git-branch-soft-reset-and-recommit",
@@ -313,6 +319,7 @@
         "plugins/git-branch/skills/soft-reset-and-recommit/SKILL.md"
       ],
       "bundled": {
+        "references/authenticated-sources.md": "plugins/git-branch/references/authenticated-sources.md",
         "references/branch-safety.md": "plugins/git-branch/references/branch-safety.md",
         "references/branch_gate.py": "plugins/git-branch/scripts/branch_gate.py",
         "references/commit-messages.md": "plugins/git-branch/references/commit-messages.md",
@@ -321,7 +328,7 @@
         "references/rebase-toolkit.md": "plugins/git-branch/references/rebase-toolkit.md",
         "references/split-mechanics.md": "plugins/git-branch/references/split-mechanics.md"
       },
-      "bytes": 67883
+      "bytes": 69319
     },
     {
       "name": "github-actions-bumping-github-actions",
@@ -866,6 +873,7 @@
       "bundled": {
         "references/analysis.md": "plugins/research/references/analysis.md",
         "references/assessment.md": "plugins/research/references/assessment.md",
+        "references/authenticated-sources.md": "plugins/research/references/authenticated-sources.md",
         "references/continue.md": "plugins/research/references/continue.md",
         "references/layout.md": "plugins/research/references/layout.md",
         "references/prose-rules.md": "plugins/research/references/prose-rules.md",
@@ -877,7 +885,7 @@
         "references/topic.py": "plugins/research/scripts/topic.py",
         "references/verify.md": "plugins/research/references/verify.md"
       },
-      "bytes": 252515
+      "bytes": 256764
     },
     {
       "name": "research-release",
@@ -1189,13 +1197,14 @@
         "plugins/situate/skills/situate/SKILL.md"
       ],
       "bundled": {
+        "references/authenticated-sources.md": "plugins/situate/references/authenticated-sources.md",
         "references/position.py": "plugins/situate/scripts/position.py",
         "references/prior-conversations.md": "plugins/situate/references/prior-conversations.md",
         "references/prose-rules.md": "plugins/situate/references/prose-rules.md",
         "references/report-shape.md": "plugins/situate/references/report-shape.md",
         "references/situation-sweep.md": "plugins/situate/references/situation-sweep.md"
       },
-      "bytes": 37949
+      "bytes": 39417
     },
     {
       "name": "situate-brief",
@@ -1203,12 +1212,13 @@
         "plugins/situate/skills/brief/SKILL.md"
       ],
       "bundled": {
+        "references/authenticated-sources.md": "plugins/situate/references/authenticated-sources.md",
         "references/brief.md": "plugins/situate/references/brief.md",
         "references/position.py": "plugins/situate/scripts/position.py",
         "references/prose-rules.md": "plugins/situate/references/prose-rules.md",
         "references/situation-sweep.md": "plugins/situate/references/situation-sweep.md"
       },
-      "bytes": 32368
+      "bytes": 33836
     },
     {
       "name": "situate-refocus",
@@ -1216,12 +1226,13 @@
         "plugins/situate/skills/refocus/SKILL.md"
       ],
       "bundled": {
+        "references/authenticated-sources.md": "plugins/situate/references/authenticated-sources.md",
         "references/goal-derivation.md": "plugins/situate/references/goal-derivation.md",
         "references/position.py": "plugins/situate/scripts/position.py",
         "references/prose-rules.md": "plugins/situate/references/prose-rules.md",
         "references/situation-sweep.md": "plugins/situate/references/situation-sweep.md"
       },
-      "bytes": 36212
+      "bytes": 37680
     },
     {
       "name": "situate-situational-awareness",
@@ -1229,13 +1240,14 @@
         "plugins/situate/skills/situational-awareness/SKILL.md"
       ],
       "bundled": {
+        "references/authenticated-sources.md": "plugins/situate/references/authenticated-sources.md",
         "references/position.py": "plugins/situate/scripts/position.py",
         "references/prior-conversations.md": "plugins/situate/references/prior-conversations.md",
         "references/prose-rules.md": "plugins/situate/references/prose-rules.md",
         "references/report-shape.md": "plugins/situate/references/report-shape.md",
         "references/situation-sweep.md": "plugins/situate/references/situation-sweep.md"
       },
-      "bytes": 37534
+      "bytes": 39002
     },
     {
       "name": "situate-what",
@@ -1243,12 +1255,13 @@
         "plugins/situate/skills/what/SKILL.md"
       ],
       "bundled": {
+        "references/authenticated-sources.md": "plugins/situate/references/authenticated-sources.md",
         "references/brief.md": "plugins/situate/references/brief.md",
         "references/position.py": "plugins/situate/scripts/position.py",
         "references/prose-rules.md": "plugins/situate/references/prose-rules.md",
         "references/situation-sweep.md": "plugins/situate/references/situation-sweep.md"
       },
-      "bytes": 35045
+      "bytes": 36513
     },
     {
       "name": "skill-style",
@@ -1443,10 +1456,11 @@
         "plugins/ticket/skills/draft/SKILL.md"
       ],
       "bundled": {
+        "references/authenticated-sources.md": "plugins/ticket/references/authenticated-sources.md",
         "references/prose-rules.md": "plugins/ticket/references/prose-rules.md",
         "references/resolve.md": "plugins/ticket/references/resolve.md"
       },
-      "bytes": 21165
+      "bytes": 22510
     },
     {
       "name": "ticket-rebuild",
@@ -1454,10 +1468,11 @@
         "plugins/ticket/skills/rebuild/SKILL.md"
       ],
       "bundled": {
+        "references/authenticated-sources.md": "plugins/ticket/references/authenticated-sources.md",
         "references/prose-rules.md": "plugins/ticket/references/prose-rules.md",
         "references/resolve.md": "plugins/ticket/references/resolve.md"
       },
-      "bytes": 23681
+      "bytes": 25026
     },
     {
       "name": "voice-phrase",
@@ -1688,6 +1703,7 @@
     "plugins/pytest-optimizer/references/prose-rules.md": 5,
     "plugins/pytest-optimizer/scripts/isolate.py": 5,
     "plugins/pytest-optimizer/scripts/measure.py": 5,
+    "plugins/situate/references/authenticated-sources.md": 5,
     "plugins/situate/references/prose-rules.md": 5,
     "plugins/situate/references/situation-sweep.md": 5,
     "plugins/situate/scripts/position.py": 5,
@@ -1756,6 +1772,7 @@
     "plugins/weave/references/mutating-run.md": 3,
     "plugins/weave/references/refine-cycle.md": 3,
     "plugins/weave/references/variants.md": 3,
+    "plugins/action/references/authenticated-sources.md": 2,
     "plugins/action/references/implement-and-commit.md": 2,
     "plugins/action/references/prose-rules.md": 2,
     "plugins/action/references/ticket-detection.md": 2,
@@ -1766,6 +1783,7 @@
     "plugins/disk/references/agent-history.md": 2,
     "plugins/disk/references/prose-rules.md": 2,
     "plugins/disk/references/virtual-disks.md": 2,
+    "plugins/double-check/references/authenticated-sources.md": 2,
     "plugins/double-check/references/prose-rules.md": 2,
     "plugins/double-check/references/verification-contract.md": 2,
     "plugins/gh/references/project-links.md": 2,
@@ -1774,6 +1792,7 @@
     "plugins/gh/references/source-links.md": 2,
     "plugins/gh/references/source-pins.md": 2,
     "plugins/gh/scripts/issue.py": 2,
+    "plugins/git-branch/references/authenticated-sources.md": 2,
     "plugins/git-branch/references/branch-safety.md": 2,
     "plugins/git-branch/references/commit-messages.md": 2,
     "plugins/git-branch/references/prose-rules.md": 2,
@@ -1824,6 +1843,7 @@
     "plugins/tdd/scripts/diff_gate.py": 2,
     "plugins/tdd/scripts/stash_roundtrip.py": 2,
     "plugins/terraform/references/pin-sites.md": 2,
+    "plugins/ticket/references/authenticated-sources.md": 2,
     "plugins/ticket/references/prose-rules.md": 2,
     "plugins/ticket/references/resolve.md": 2,
     "plugins/weave/references/consensus-map.md": 2,
@@ -1834,6 +1854,7 @@
     "plugins/agent-messaging/references/agents/codex.md": 1,
     "plugins/agent-messaging/references/prose-rules.md": 1,
     "plugins/agent-messaging/scripts/relay.sh": 1,
+    "plugins/business/references/authenticated-sources.md": 1,
     "plugins/business/references/instruments.md": 1,
     "plugins/changelog/scripts/rewrite.py": 1,
     "plugins/commit/references/prose-rules.md": 1,
@@ -1868,6 +1889,7 @@
     "plugins/repo-skills/scripts/evidence.py": 1,
     "plugins/research/references/analysis.md": 1,
     "plugins/research/references/assessment.md": 1,
+    "plugins/research/references/authenticated-sources.md": 1,
     "plugins/research/references/continue.md": 1,
     "plugins/research/references/layout.md": 1,
     "plugins/research/references/release.md": 1,

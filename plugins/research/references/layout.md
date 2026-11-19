@@ -57,6 +57,7 @@ One id per URL. A row is one version of that source: new bytes, a more exact ref
 - `retrieved`: the real UTC time the capture was taken, whatever `--date` names the run. Carrying forward never changes it.
 - `sha256` and `file`: the capture's hash and path under `references/`. Null for a URL-only source.
 - `capture`: `fetch` when `topic.py` downloaded it (live bytes are comparable), `file` when you saved it.
+- `via`: the tool that read a `file` capture from behind an account, such as `gh api repos/o/r/contents/README.md` or an MCP server and tool.
 - `response`: for a fetched capture, the server's `status`, `final_url` after redirects, `content_type`, `last_modified`, `etag`, and `date`.
 - `unretrieved`: why the source could not be captured. Such a source has no capture and holds no quotes; a source that has a capture cannot be marked unretrieved.
 - `kind`: vendor (the subject's own), independent, or measured (your own test).
@@ -85,7 +86,7 @@ A release row: `at`, `sha256` and `report` (the snapshot under `releases/`), `to
 
 - fresh: added this run.
 - verified: a live check of its current version passed by comparing content (the fetched bytes, or a recorded quote on the live page), and no later check failed.
-- intact: only an offline check passed.
+- intact: only an offline check passed. A source read `via` a tool stays here.
 - reachable: the live URL answered, and there was no capture or quote to compare.
 - unchecked: no capture, and no live check.
 - unretrieved: never captured.
