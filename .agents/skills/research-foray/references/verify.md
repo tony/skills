@@ -8,11 +8,11 @@ Three checks, in this order: the references still say what you cite them for, no
 $ python3 <topic.py> verify --run <run_dir>
 ```
 
-`--offline` checks only the captures on disk: present, unaltered, quotes still inside. Without it, each URL is also fetched. Results append to `<run>/references/checks.jsonl`; the command exits 1 when any check fails. Each result leaves the source in a state that `layout.md` (Source states) defines; only a live pass that compared content makes it verified. A source recorded `--via` a tool is never fetched and stays intact. To compare it, read it again through that tool and re-add the result with `--file` and `--via`; `add` refuses a recorded quote the new capture lacks.
+`--offline` checks only the captures on disk: present, unaltered, quotes still inside. Without it, each URL is also fetched. Results append to `<run>/references/checks.jsonl`; the command exits 1 when any check fails. Each result leaves the source in a state that `layout.md` (Source states) defines; only a live pass that compared content makes it verified. A source recorded `--via` a tool is never fetched; to compare it, read it again through that tool and re-add it with `--file` and `--via`. `add` refuses a recorded quote the new capture lacks.
 
 Handle each failure by its status:
 
-- **Behind an account** (a private repository's 404, a redirect to a sign-in page, a 401 or 403): read it again through its tool per `authenticated-sources.md` and re-add it with `--file` and `--via`.
+- **Behind an account** (a private repository's 404, a redirect to a sign-in page, a 401 or 403): re-add it through its tool the same way, per `authenticated-sources.md`.
 - **moved**: add the source at its new URL with `--replaces <old id>`, then update the report's citations.
 - **vanished**: find the same material at a pinned location (an archive, a release tag) and add it with `--replaces <old id>`, or retract the claims that rested on it.
 - **changed**: read the new version and re-capture it (`add --fetch` with the same URL and ref). Keep the id; revise claims it no longer supports, and pass `--set-quotes` with a `--fields` file holding passages from the new capture.

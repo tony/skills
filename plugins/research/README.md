@@ -142,13 +142,13 @@ DIGEST` catches a bag rewritten together with its manifests.
 
 `add --fetch`, `verify`, `check`, and `release` fetch source URLs directly,
 after vetting that each resolves to a public address. They never fetch a
-source recorded with `add --via`, which a tool such as `gh` or an MCP server
-read with your login; checks compare its saved capture. Every capture is stored
-under the run's `references/raw/`, and `export` bags them with the rest of the
-run, so a captured page stays on disk until you delete the run. Searching the
-web, when a host offers it, goes through that host. Study Dependencies runs
-registry lookups only after you approve them, and `check --offline` makes no
-requests.
+source recorded with `add --via` (read with your login through a tool such as
+`gh` or an MCP server); `verify` checks only its saved capture. Every capture
+is stored under the run's `references/raw/`, and `export` bags them with the
+rest of the run, so a captured page stays on disk until you delete the run.
+Searching the web, when a host offers it, goes through that host. Study
+Dependencies runs registry lookups only after you approve them, and `check
+--offline` makes no requests.
 
 ## Study Dependencies
 

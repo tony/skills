@@ -41,7 +41,7 @@ Fill `## Question` and `## Scope` in `index.md`: the question, what is in, what 
 
 ## 4. Collect sources
 
-Before the first search, list the connected tools per `authenticated-sources.md`. A source behind an account goes through its tool: save what the tool returned and record it with `--file` and `--via "<tool and call>"`, such as `--via "gh api repos/o/r/issues/12"`. Retry a search or capture that hit a login through such a tool before logging it as a gap.
+Before the first search, list the connected tools per `authenticated-sources.md`. A source behind an account goes through its tool: save what the tool returned and record it with `--file` and `--via "<tool and call>"`, such as `--via "gh api repos/o/r/issues/12"`. A search or fetch that met a sign-in page, a 401 or 403, or a 404 for a repository or ticket goes through such a tool before it counts as a gap.
 
 Log each search as you run it, hits or not:
 
@@ -58,7 +58,7 @@ A search that errored, hit a rate limit or a login, or was blocked found nothing
 For each source a claim will rest on:
 
 1. Prefer the primary source. Pin it: a release tag or 7-character commit for code, a version for docs, an edition for books. Never a branch URL. A pin is a value (`3.46`, a commit, an edition) or `pin unknown`, never "the current release". When the only URL is a moving alias (`/latest/`, `/stable/`, a major-version path such as `/docs/17/`), pass the exact version the page states (`17.11`, not `17`) as `--ref` and note the alias in the report's Method. Re-adding the same URL with a more exact `--ref` keeps its id. An unversioned page takes no `--ref`.
-2. Capture it. `--fetch` downloads it (comparable on later checks); otherwise save what the URL serves to a file and pass `--file`. A capture is the document at its URL: never pair a URL with bytes from somewhere else, such as a local copy of a different file. A page that changes on every load (an issue tracker, a dashboard) never verifies as fetched; capture its stable form, such as the raw file or the JSON its tool returns (`gh api` for a GitHub issue), or save the text you read; record it with `--file` and pass the thread's last-updated time as `--ref`.
+2. Capture it. `--fetch` downloads it (comparable on later checks); otherwise save what the URL serves, or what a connected tool returned for it, to a file and pass `--file` (with `--via` for the tool). A capture is the document at its URL: never pair a URL with bytes from somewhere else, such as a local copy of a different file. A page that changes on every load (an issue tracker, a dashboard) never verifies as fetched; capture its stable form, such as the raw file or the JSON its tool returns (`gh api` for a GitHub issue), or save the text you read; record it with `--file` and pass the thread's last-updated time as `--ref`.
    When a source cannot be captured (a paywall, a login no connected tool passes, a removed page, a rate limit), record it with `--unretrieved "<why>"` in place of `--fetch`. It is a gap per `analysis.md`.
    Your own test is a source too, including a probe of a localhost or development server the session started. Run it through `topic.py` so the exact command, exit status, timing, platform, and output are kept, and the files it writes are hashed:
 
