@@ -52,8 +52,8 @@ say so in the plan and shrink the window; never sample silently.
 ### Ticket trackers
 
 Find a connected tool for Jira, Linear, or whatever the team uses
-per [authenticated-sources.md](authenticated-sources.md); the project's
-AGENTS.md/CLAUDE.md may name the tracker. Nothing found → unavailable.
+per [authenticated-sources.md](authenticated-sources.md). Nothing found →
+unavailable.
 
 ### CI telemetry, session logs, time tracking
 
