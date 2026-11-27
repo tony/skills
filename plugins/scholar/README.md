@@ -55,6 +55,12 @@ Distil an ontology, controlled vocabulary, or glossary of what a codebase, a rep
 $ /scholar:ontology [<target>...]
 ```
 
+Find the named concept sets in a topic (typologies, stage models, levels, processes, components, skills, axioms) and diff them against an existing catalog:
+
+```console
+$ /scholar:typologies <topic> [--catalog=<file>]
+```
+
 Resolve and pin a corpus, inventory it, and record what was read and what was deliberately skipped:
 
 ```console
@@ -115,8 +121,8 @@ Re-check a study against the corpus it cites: moved refs, vanished files, misquo
 $ /scholar:verify [<dir>]
 ```
 
-`ontology` is the only skill a model routes to on its own. The rest are
-invoked by name, so the pipeline can be resumed at any stage.
+`ontology` and `typologies` are the skills a model routes to on its own. The
+rest are invoked by name, so the pipeline can be resumed at any stage.
 
 ## Artifacts
 
@@ -135,6 +141,13 @@ notes/ontology/<subject>/
     ├── contested.md      claim, objection, verdict, including the kills
     └── corrections.md    retractions: what was believed, and why it failed
 ```
+
+`typologies` writes its own study under `notes/concept-sets/<subject>/`:
+`sets.jsonl` (one row per concept set, with members, kind, order, versions,
+and cites), `sources.jsonl` in the same format, the reader's `catalog.jsonl`,
+and `evidence/scope.md` and `evidence/comparison.md`.
+`scripts/concept_sets.py` gates the rows, diffs the catalog, and renders the
+table.
 
 `terms.jsonl` is the seam everything composes on. Stages do not call each
 other; they read and write these files. A term table written by hand, or by a
