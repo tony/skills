@@ -47,6 +47,9 @@ defines. It runs when you ask for a rebase and never pushes.
 
 - git 2.36 or newer.
 - Python 3.14 or newer on a POSIX host, for the recovery helper.
+- With an older `python3`, the skills look for Python 3.14 or newer on `PATH`
+  or through uv, mise, asdf, or pyenv, and ask before uvx, uv, pipx, or mise
+  downloads one.
 - A remote carrying trunk; selection follows
   [the skill's inspection phase](skills/rebase/SKILL.md).
 

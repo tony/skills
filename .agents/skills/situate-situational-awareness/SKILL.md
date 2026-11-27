@@ -17,6 +17,9 @@ Read `references/situation-sweep.md` first, and
 transcripts. Search them only on an explicit request; a request to resume
 after a gap gets a question first, as that reference describes.
 
+When `python3` is missing or older than 3.14, follow
+`references/python.md`.
+
 A bare "huh" or "what?" is not this skill; `brief` answers it. This one
 runs when someone can already say what they want caught up on.
 

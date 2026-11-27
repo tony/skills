@@ -29,6 +29,9 @@ object is before deciding what goes in it.
 `<scripts>` is `../../scripts`, resolved from this skill's directory to an
 absolute path written literally in each command.
 
+When `python3` is missing or older than 3.14, follow
+`references/python.md`.
+
 ## Phase 1: Resolve the target
 
 Establish the provider, the scope container, and the semantic role per

@@ -16,6 +16,8 @@ The analyzer is `../../scripts/term_metrics.py`; `<analyzer>` below is its
 absolute path resolved from this skill's directory. `../../references/stage-gates.md` states the brief gate's exit
 condition.
 
+When `python3` is missing or older than 3.14, follow `../../references/python.md`.
+
 User arguments: $ARGUMENTS
 
 Read `../../references/output-contract.md` before writing study files.

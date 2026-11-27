@@ -13,6 +13,8 @@ Clone the project's dependencies at their installed versions into git worktrees 
 
 `<deps.py>` is `scripts/deps.py` in this plugin, at `../../scripts/deps.py` from this skill's directory. Before the first command, resolve it once to an absolute path from this skill's base directory (known when the skill loads) and write that absolute path literally in every later command: shell variables do not persist between Bash calls. Each subcommand prints one JSON object. A non-zero exit carries `{"ok": false, "error": "<reason>"}`: that dependency is `failed: <reason>`; never retry it with looser input.
 
+When `python3` is missing or older than 3.14, follow `../../references/python.md`.
+
 ## Orchestration Plan
 
 Enter plan mode before the first edit. In Claude Code call `EnterPlanMode`; in Cursor, Codex, or Gemini use `/plan` or `Shift+Tab`. Where plan mode is unavailable, present the plan as text.

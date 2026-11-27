@@ -34,6 +34,9 @@ resolved once per "Resolve the base first" in `split-mechanics.md`.
 `../../scripts/rebase-todo.sh`, each resolved from this skill's directory
 to an absolute path; write that path literally in each command.
 
+When `python3` is missing or older than 3.14, follow
+`../../references/python.md`.
+
 ## Core principle
 
 The old branch is the specification, not the source.

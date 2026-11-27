@@ -21,6 +21,7 @@ _FENCE_RE = re.compile(r"^(\s*)(`{3,}|~{3,})\s*([\w+-]*)")
 _HEREDOC_RE = re.compile(r"<<-?\s*['\"]?(\w+)['\"]?")
 _USER_INVOCABLE_RE = re.compile(r"^user-invocable:\s*true\s*$", re.MULTILINE)
 _PROSE_RULES_LINK = "../../references/prose-rules.md"
+_PYTHON_LINK = "../../references/python.md"
 
 _COMMAND_START = r"(?:^|&&|;|\|)\s*(?:\$ )?(?:uv run |poetry run |python3? -m )?"
 _TEST_RUNNER = r"(?:pytest|npm (?:run )?test|cargo test|go test)\b"
@@ -422,3 +423,20 @@ def lacks_prose_rules_link(text: str) -> bool:
     True
     """
     return _PROSE_RULES_LINK not in text
+
+
+def lacks_python_link(text: str, scripts: t.Iterable[str]) -> bool:
+    r"""Report whether a SKILL.md names a bundled Python script but not the fallback.
+
+    The fallback, ``python.md``, finds a Python 3.14 when ``python3`` is older.
+
+    Examples
+    --------
+    >>> lacks_python_link("run ../../scripts/gate.py", ["gate.py"])
+    True
+    >>> lacks_python_link("run gate.py per ../../references/python.md", ["gate.py"])
+    False
+    >>> lacks_python_link("no script here", ["gate.py"])
+    False
+    """
+    return _PYTHON_LINK not in text and any(name in text for name in scripts)

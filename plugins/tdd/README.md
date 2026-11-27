@@ -75,5 +75,8 @@ Adapts dynamically based on `AGENTS.md` / `CLAUDE.md`:
 
 - git, for the commits.
 - python3 (3.14 or newer), for the diff-gate script.
+- With an older `python3`, the skills look for Python 3.14 or newer on `PATH`
+  or through uv, mise, asdf, or pyenv, and ask before uvx, uv, pipx, or mise
+  downloads one.
 - A supported test framework.
 - Quality gate commands listed in the project's AGENTS.md or CLAUDE.md.

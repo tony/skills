@@ -88,6 +88,9 @@ Ruby, PHP, Java, bun and deno projects are not covered.
 - git
 - python3 (3.14 or newer): runs `scripts/repo_facts.py`, which reports
   fork signal, default branch and pins per repository.
+- With an older `python3`, the skills look for Python 3.14 or newer on `PATH`
+  or through uv, mise, asdf, or pyenv, and ask before uvx, uv, pipx, or mise
+  downloads one.
 - jq: reads registry responses for the cooldown check.
 - curl and network access: link checks and the cooldown check read
   release pages and registries.

@@ -42,7 +42,8 @@ one of them; offer the others as next steps.
 - Script paths: `../../scripts/lockctl.py` resolves from a skill's
   directory (a reference writes `../scripts/`). Print the absolute path
   once and write it literally in each command, since shell variables do
-  not persist between Bash calls.
+  not persist between Bash calls. When `python3` is missing or older than
+  3.14, follow `../../references/python.md`.
 - Run `init`, `providers lock`, `lockctl.py diff`, each repository gate,
   and `git commit` in separate Bash calls, one command per call. Read
   that command's returned exit status before continuing. Read long

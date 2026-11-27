@@ -22,6 +22,9 @@ Shared rules: [xfail mechanisms](references/xfail-mechanisms.md) and
 commit messages per `references/prose-rules.md` and the reference's
 "Commit messages" section.
 
+When `python3` is missing or older than 3.14, follow
+`references/python.md`.
+
 ## Phase 1: Understand the Bug
 
 1. Create a todo list tracking all phases.

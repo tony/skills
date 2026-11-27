@@ -19,6 +19,9 @@ Read `../../references/resolve.md`; it lists what else to read and when.
 `<scripts>` is `../../scripts`, resolved from this skill's directory to an
 absolute path written literally in each command.
 
+When `python3` is missing or older than 3.14, follow
+`../../references/python.md`.
+
 ## Core principle
 
 Nothing valuable is deleted: it is kept, relocated, or demoted, and when

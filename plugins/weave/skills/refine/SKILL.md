@@ -13,6 +13,8 @@ The artifact comes from `$ARGUMENTS`: an existing file path (read it) or inline 
 
 `<engine>` is `../../scripts/engine.py` resolved from this skill's directory to an absolute path, written literally in every command, and run with `python3`.
 
+When `python3` is missing or older than 3.14, follow `../../references/python.md`.
+
 ## Worker selection
 
 <!-- portable: ask-user-choice=headless-default -->

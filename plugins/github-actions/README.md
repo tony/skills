@@ -73,5 +73,8 @@ close-out protocol live in `references/action-pinning.md`,
   proposal reader, and PR state readback) and `scripts/fleet.py` (repository
   discovery under `--root`, throwaway-worktree check, branch naming, and push
   eligibility).
+- With an older `python3`, the skills look for Python 3.14 or newer on `PATH`
+  or through uv, mise, asdf, or pyenv, and ask before uvx, uv, pipx, or mise
+  downloads one.
 - gh: tag verification, release lookup, CI watching, and closing
   dependabot PRs.

@@ -71,6 +71,9 @@ not a pin. Every pin site in a repository moves in the same commit, or
 none does. A pin owned by a sibling plugin (ruff in pre-commit, an
 action in CI) is reported with its sibling command, not moved here.
 
+When `python3` is missing or older than 3.14, follow
+`../../references/python.md`.
+
 Note where the pin shapes disagree: an exact pin in one package and a
 caret range in another is drift worth reporting even when both resolve
 to the same version.

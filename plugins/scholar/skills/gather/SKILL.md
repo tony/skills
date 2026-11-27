@@ -47,6 +47,9 @@ $ python3 <pins> local <corpus> \
     --study <out>
 ```
 
+When `python3` is missing or older than 3.14, follow
+`../../references/python.md`.
+
 It exits non-zero with a one-line reason when the checkout has uncommitted
 edits (files under `<out>` do not count), and otherwise prints one JSON line:
 `commit` (the full 40 digits to record as `commit`), `ref` (the tag when one

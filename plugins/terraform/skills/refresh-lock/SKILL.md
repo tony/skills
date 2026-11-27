@@ -20,6 +20,9 @@ state, script paths, commit message rules, non-interactive defaults,
 the plan, stopped and audit-only runs). This skill uses
 `../../references/layout-discovery.md` and `../../references/lock-and-init.md`.
 
+When `python3` is missing or older than 3.14, follow
+`../../references/python.md`.
+
 User arguments: $ARGUMENTS
 
 ## Procedure

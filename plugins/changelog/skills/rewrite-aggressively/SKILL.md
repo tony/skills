@@ -36,6 +36,9 @@ to an absolute path, written literally in every command, and run with
 `python3`. File paths are relative to the repository root, from any working
 directory. It prints one JSON object; `"ok": false` carries the `reason`.
 
+When `python3` is missing or older than 3.14, follow
+`../../references/python.md`.
+
 ## Phase 1: Safety checks, scope, approval
 
 1. **Detect the base**, fetch it, and find the changelog file per

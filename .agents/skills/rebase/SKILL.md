@@ -19,6 +19,9 @@ It prints JSON containing `ok`, `phase`, and exact recovery refs. Keep those
 values across tool calls; shell variables do not persist. The helper owns
 the rebase and stash commands, including continuation and restoration.
 
+When `python3` is missing or older than 3.14, follow
+`references/python.md`.
+
 Write reports and any authorized commit message per
 `references/prose-rules.md`.
 

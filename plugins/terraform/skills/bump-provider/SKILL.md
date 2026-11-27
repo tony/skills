@@ -20,6 +20,9 @@ the plan, stopped and audit-only runs). This skill uses
 `/terraform:bump-terraform`. To refresh locks within existing constraints,
 use `/terraform:refresh-lock`.
 
+When `python3` is missing or older than 3.14, follow
+`../../references/python.md`.
+
 User arguments: $ARGUMENTS
 
 ## Procedure

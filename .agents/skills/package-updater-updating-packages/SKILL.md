@@ -19,6 +19,9 @@ behind the remote, toolchain pins read from the default branch) come from
 directory to an absolute one and write it literally in the command. It
 needs `python3` 3.14 or newer.
 
+When `python3` is missing or older than 3.14, follow
+`references/python.md`.
+
 References:
 
 - `references/repo-scope.md`: scope flags, the default branch,

@@ -97,6 +97,7 @@ Gathers context in order, degrading gracefully if unavailable:
 ## Prerequisites
 - `git`
 - `python3` (3.14 or newer; runs `scripts/position.py` for `what`, `situate`, and `refocus`)
+- With an older `python3`, the skills look for Python 3.14 or newer on `PATH` or through uv, mise, asdf, or pyenv, and ask before uvx, uv, pipx, or mise downloads one.
 - `gh` CLI (optional, but needed for PRs/issues/threads)
 - `uvx` (only required for `--with-agentgrep` to run
   [agentgrep](https://pypi.org/project/agentgrep/))

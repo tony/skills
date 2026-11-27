@@ -21,6 +21,9 @@ User arguments: $ARGUMENTS
 Without `--study`, the study is found as stage-gates.md describes under "The
 study directory" (`references/stage-gates.md`).
 
+When `python3` is missing or older than 3.14, follow
+`references/python.md`.
+
 Read `references/output-contract.md` before answering.
 
 ## Answer from the evidence, or name the gap

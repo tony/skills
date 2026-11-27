@@ -26,6 +26,9 @@ resolve this file's directory, join each path, print the absolute paths once,
 and write those literal paths in each command below where `<measure.py>` and
 `<isolate.py>` appear.
 
+When `python3` is missing or older than 3.14, follow
+`references/python.md`.
+
 ## Step 1: Load and score
 
 Resolve the memory directory by the lookup order in

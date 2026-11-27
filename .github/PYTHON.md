@@ -8,8 +8,10 @@ are the gates in [AGENTS.md](../AGENTS.md#quality-gates).
 ## Two floors
 
 Plugin scripts (`plugins/*/scripts/`, `plugins/*/evals/`) and `shared/*.py`
-run under the user's own `python3`, whose version this repository does not
-control:
+run under the user's own Python, whose version this repository does not
+control. Skills run them with `python3`; when it is missing or older than
+3.14, `references/python.md` tells the agent how to find a newer interpreter
+on `PATH` or through uv, mise, asdf, or pyenv:
 
 - They require Python 3.14 and import only the standard library.
 - They start with `#!/usr/bin/env python3`, never a uv shebang or a PEP 723

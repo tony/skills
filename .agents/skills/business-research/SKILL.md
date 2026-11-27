@@ -31,6 +31,9 @@ Load `references/measurement.md` only for the counterfactual
 ladder and the statistics discipline, which owns the n<5 range rule.
 Intervals come from `references/business.py stats` (absolute path).
 
+When `python3` is missing or older than 3.14, follow
+`references/python.md`.
+
 User arguments: $ARGUMENTS
 
 ## Procedure

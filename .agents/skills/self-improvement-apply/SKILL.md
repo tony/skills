@@ -21,6 +21,9 @@ bad one.
 directory, not the repository root. Resolve it to an absolute path once,
 print it, and use that literal path in every command below.
 
+When `python3` is missing or older than 3.14, follow
+`references/python.md`.
+
 ## The rule that makes this safe
 
 ```text

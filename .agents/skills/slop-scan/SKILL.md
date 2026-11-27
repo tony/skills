@@ -187,8 +187,9 @@ flagged files (expensive, precise).
 `<slop_detect.py>` is `references/slop_detect.py`, resolved from this
 skill's directory, not the repository root. Resolve it to an absolute
 path once, print it, and write that literal path in each command, since
-shell variables do not persist between Bash calls. It needs python3 (3.9
-or newer).
+shell variables do not persist between Bash calls. It needs Python 3.14
+or newer: when `python3` is missing or older, follow
+`references/python.md`.
 
 `<signatures.yml>` is `references/signatures.yml`, resolved and
 written the same way. Write the literal value of `BASELINE_SHA`,

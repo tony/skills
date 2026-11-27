@@ -20,6 +20,9 @@ directory, not the repository root. Resolve it to an absolute path once,
 print it, and use that literal path in every command below. It needs
 python 3.14 or newer.
 
+When `python3` is missing or older than 3.14, follow
+`../../references/python.md`.
+
 ## Two shapes carry the signal
 
 Typed around an invocation: the prompt names a skill and adds something.

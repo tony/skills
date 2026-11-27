@@ -102,6 +102,9 @@ request is conversational (e.g., "the providers here are ancient").
 
 - `git` and a repository with tracked Terraform or OpenTofu files.
 - `python3` (3.14 or newer) for `scripts/lockctl.py`.
+- With an older `python3`, the skills look for Python 3.14 or newer on `PATH`
+  or through uv, mise, asdf, or pyenv, and ask before uvx, uv, pipx, or mise
+  downloads one.
 - `curl` and `jq` for registry and release lookups.
 - `terraform` or `tofu` CLI on `PATH`. The plugin resolves versions against
   the detected tool's registry.

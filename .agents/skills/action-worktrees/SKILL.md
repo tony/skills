@@ -64,6 +64,9 @@ separately for a unit that needs different axes. `--setup-only` with
 
 ## Phase 0: Situational awareness
 
+When `python3` is missing or older than 3.14, follow
+`references/python.md`.
+
 Follow `references/worktree-setup.md` (Situational awareness,
 including the refusal when the repository root is at or above the
 physical home path, via `references/worktree_paths.py guard` resolved

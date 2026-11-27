@@ -38,6 +38,9 @@ in the command:
 $ python3 /absolute/path/to/scripts/sensitive.py scan
 ```
 
+When `python3` is missing or older than 3.14, follow
+`../../references/python.md`.
+
 It prints one line per changed path: `ok` or `refuse`, the state (`staged`,
 `partial` for staged plus unstaged edits, `unstaged`, `untracked`), the path,
 and the reason (a sensitive name, or a private-key or token marker in the

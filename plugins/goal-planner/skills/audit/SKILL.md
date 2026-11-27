@@ -18,6 +18,9 @@ only for checks that apply to this draft.
 `<planner>` is `../../scripts/planner.py`, resolved from this skill's directory
 to an absolute path written literally in each command.
 
+When `python3` is missing or older than 3.14, follow
+`../../references/python.md`.
+
 ## 1. Bind the review
 
 Build the contract's review packet under

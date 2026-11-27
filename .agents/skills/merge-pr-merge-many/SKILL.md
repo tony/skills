@@ -67,6 +67,9 @@ and list them without a question tool.
 Resolve the absolute script path as the reference describes: `../../scripts/`
 from this skill's directory.
 
+When `python3` is missing or older than 3.14, follow
+`references/python.md`.
+
 For a stack, plan the retarget: after each parent merges, read the child's
 `baseRefName` (`gh pr view <child> --json baseRefName`); when it is not
 trunk, run `gh pr edit <child> --base <trunk>`, then re-read the child's

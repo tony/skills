@@ -22,6 +22,9 @@ Shared rules: [xfail mechanisms](references/xfail-mechanisms.md) and
 commit messages per `references/prose-rules.md` and the reference's
 "Commit messages" section.
 
+When `python3` is missing or older than 3.14, follow
+`references/python.md`.
+
 ## Orchestration Plan
 
 Enter plan mode before the first edit. In Claude Code call `EnterPlanMode`;

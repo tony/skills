@@ -203,4 +203,7 @@ Monorepos clone once, with worktrees containing all packages.
 ## Prerequisites
 
 - python3 3.14 or newer, for topics and dependency study.
+- With an older `python3`, the skills look for Python 3.14 or newer on `PATH`
+  or through uv, mise, asdf, or pyenv, and ask before uvx, uv, pipx, or mise
+  downloads one.
 - git, and a project with a supported manifest, for dependency study.

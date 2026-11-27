@@ -83,4 +83,7 @@ Arguments:
 - `curl`, or GitHub CLI (`gh`) for release lookups; `gh`, authenticated, only for fork checks and `--pr`
 - `jq`, for resolving a rule's documentation slug in `references/default-rule-set.md`
 - `python3` (3.14 or newer) for the bundled measurement script
+- With an older `python3`, the skills look for Python 3.14 or newer on `PATH`
+  or through uv, mise, asdf, or pyenv, and ask before uvx, uv, pipx, or mise
+  downloads one.
 - Project's resolver and quality-check commands (defined in `AGENTS.md`/`CLAUDE.md` or CI workflow)

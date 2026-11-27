@@ -38,6 +38,9 @@ $ curl -fsS https://releases.hashicorp.com/terraform/index.json \
 
 Write the script's absolute path there, per the umbrella's script-path rule.
 
+When `python3` is missing or older than 3.14, follow
+`../../references/python.md`.
+
 When `tofu` drives the repository, list OpenTofu's releases with the
 command in `../../references/pin-sites.md`. Present the latest stable
 alongside the installed version and confirm which to write; they often

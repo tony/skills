@@ -21,6 +21,9 @@ authorizes pushes.
 Write each `../../scripts/` path as an absolute path; the reply rules and
 script paths are in `../../references/report-contract.md`.
 
+When `python3` is missing or older than 3.14, follow
+`../../references/python.md`.
+
 ## Exit condition
 
 The round is easy; stopping is the hard part. A loop with no exit

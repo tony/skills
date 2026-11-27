@@ -17,6 +17,9 @@ User arguments: $ARGUMENTS
 `<analyzer>` is `../../scripts/term_metrics.py`, resolved against this skill's
 directory to an absolute path.
 
+When `python3` is missing or older than 3.14, follow
+`../../references/python.md`.
+
 Without `--study`, the study is found as "The study directory" describes in
 `../../references/stage-gates.md`.
 

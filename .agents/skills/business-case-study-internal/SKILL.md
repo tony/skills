@@ -75,6 +75,9 @@ Then scan for individuals with `references/business.py scan --run <run>
 allows roles only. Then run steps 4 and 5 of `interim-format.md` § Rendering
 a report: the money check, then `stamp`.
 
+When `python3` is missing or older than 3.14, follow
+`references/python.md`.
+
 ## Output
 
 Hero success form: `✓ Case study: <one-line outcome with tag>`.

@@ -42,6 +42,9 @@ repository, default branch, file, action, current version. An inventory the
 helper reports as incomplete is never "every pin": the pinning reference says
 what to do.
 
+When `python3` is missing or older than 3.14, follow
+`../../references/python.md`.
+
 If nothing is found, stop with the blocked shape.
 
 ## Phase 2: Resolve and verify
