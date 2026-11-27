@@ -16,6 +16,8 @@ place and prints a diff. Never commits or pushes.
 
 The commands below run from the user's directory. Resolve `../../scripts/scope.py` and `../../scripts/tally.py` against the directory of this SKILL.md (the path it was read from) and write that absolute path literally in each command; shell variables do not persist between Bash calls. Never show that path in the reply.
 
+When `python3` is missing or older than 3.14, follow `../../references/python.md`.
+
 ## Confirm before the first edit
 
 This skill deletes code the user did not ask you to touch, and it can

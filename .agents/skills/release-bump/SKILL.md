@@ -24,6 +24,9 @@ its absolute path literally in each command and never show it in replies.
 Then read `references/release-conventions.md`. This skill writes no
 prose of its own; `cut` writes the changelog and commit message.
 
+When `python3` is missing or older than 3.14, follow
+`references/python.md`.
+
 ---
 
 ## Phase 1: Discover the Current Position

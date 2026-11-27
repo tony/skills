@@ -78,6 +78,9 @@ Pull-request and repository-file rules are in
   older `gh` shows up at run time as the `Unknown JSON field` probe in
   `create-issue`.
 - `python3` 3.14 or newer, for `scripts/issue.py` (standard library only).
+- With an older `python3`, the skills look for Python 3.14 or newer on `PATH`
+  or through uv, mise, asdf, or pyenv, and ask before uvx, uv, pipx, or mise
+  downloads one.
 - `git`, for resolving tags and refs when pinning links.
 - `curl` and `jq`, for package-registry lookups and pre-publish link
   checks.

@@ -15,6 +15,9 @@ point to the same contract. Stay read-only, per the contract in
 `../../references/situation-sweep.md`, and write per
 `../../references/prose-rules.md`.
 
+When `python3` is missing or older than 3.14, follow
+`../../references/python.md`.
+
 ## Recognizing the trigger
 
 The signal is a question with no subject: a bare interrogative, a

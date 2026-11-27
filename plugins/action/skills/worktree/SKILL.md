@@ -79,6 +79,8 @@ including the refusal when the repository root is at or above the
 physical home path (`../../scripts/worktree_paths.py guard`, resolved
 to an absolute path), with the gate buckets resolved per `../../references/verification-gates.md`.
 
+When `python3` is missing or older than 3.14, follow `../../references/python.md`.
+
 ## Phase 1: Ticket resolution
 
 Per `../../references/ticket-detection.md`:

@@ -128,6 +128,9 @@ Read from `references/`:
 ## Prerequisites
 
 - `python3` (3.14 or newer) for `scripts/business.py`.
+- With an older `python3`, the skills look for Python 3.14 or newer on `PATH`
+  or through uv, mise, asdf, or pyenv, and ask before uvx, uv, pipx, or mise
+  downloads one.
 - `git` for history-based collection.
 - `gh` CLI (optional) for PR/review telemetry.
 - Ticket-tracker MCPs/CLIs are probed at runtime but not required.

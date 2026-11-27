@@ -69,4 +69,7 @@ named. `references/example-ideal.md` is the same skill after the test.
 ## Prerequisites
 
 - `python3` (3.14 or newer) runs `scripts/skill_diff.py`.
+- With an older `python3`, the skills look for Python 3.14 or newer on `PATH`
+  or through uv, mise, asdf, or pyenv, and ask before uvx, uv, pipx, or mise
+  downloads one.
 - Reads `AGENTS.md` / `CLAUDE.md` at runtime to match repo voice.

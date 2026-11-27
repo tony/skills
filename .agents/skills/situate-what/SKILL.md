@@ -46,9 +46,10 @@ For the whole situation or a branch-position question, gather:
 1. Position: run `python3 references/position.py` for branch, trunk,
    ahead/behind, uncommitted work, and stashes. `../../scripts/` resolves
    from this skill's directory: write the absolute path literally in the
-   command. A `dotfile_repo` or an
-   empty repository (`has_commits` false) gets one line saying so and no
-   file list; the script prints nothing else then.
+   command. When `python3` is missing or older than 3.14, follow
+   `references/python.md`. A `dotfile_repo` or an empty repository
+   (`has_commits` false) gets one line saying so and no file list; the
+   script prints nothing else then.
 2. Commit subjects since the base:
    `git log --no-merges --format='%h %s' <trunk>..HEAD`.
 

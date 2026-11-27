@@ -168,6 +168,7 @@ beside the serial one.
   throwaway checkouts, identifier checks) and `scripts/verify_report.py` (the
   mechanical parts of `verify`). Both use the standard library only, so they run inside any corpus
   checkout with no package manager present.
+- With an older `python3`, the skills look for Python 3.14 or newer on `PATH` or through uv, mise, asdf, or pyenv, and ask before uvx, uv, pipx, or mise downloads one.
 
 A corpus with no git remote cannot be cited by permalink. Publish it first, or
 cite `path@commit`, which `verify` checks with `git show` through

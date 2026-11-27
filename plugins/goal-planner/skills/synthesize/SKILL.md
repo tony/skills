@@ -17,6 +17,9 @@ when their step applies. `<planner>` is
 `../../scripts/planner.py`, resolved from this skill's directory to an absolute
 path written literally in every command.
 
+When `python3` is missing or older than 3.14, follow
+`../../references/python.md`.
+
 ## 1. Read the originals
 
 Read full goals, specifications, corrections, project rules, and evidence;

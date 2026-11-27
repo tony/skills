@@ -15,6 +15,9 @@ Read `../../references/situation-sweep.md` first, and
 `../../references/prior-conversations.md` before using
 `--with-agentgrep`.
 
+When `python3` is missing or older than 3.14, follow
+`../../references/python.md`.
+
 User arguments: $ARGUMENTS
 
 ## Procedure

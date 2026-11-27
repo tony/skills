@@ -28,6 +28,9 @@ project. Resolve `references/detect.py` against this skill's directory,
 print the absolute path once, and write it literally in each command,
 since shell variables do not persist between Bash calls.
 
+When `python3` is missing or older than 3.14, follow
+`references/python.md`.
+
 ## Workflow
 
 ### Step 0: Detect framework and Tailwind version

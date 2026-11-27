@@ -66,6 +66,9 @@ and the reference's `--match-head-commit <sha>` pin. Pass the composed message t
 reference's `merge_pr.py merge` command, never inside a shell string. Use
 `--admin` only within the reference's policy.
 
+When `python3` is missing or older than 3.14, follow
+`references/python.md`.
+
 ### 5. Sync trunk and stand by
 
 Sync trunk and confirm the merge, per the reference's "After each merge",

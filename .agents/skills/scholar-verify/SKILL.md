@@ -29,6 +29,9 @@ each resolved against this skill's directory to an absolute path. The scripts
 do the comparing, the diffing and the report assembly; the network fetches
 (`gh`, `curl`) and the judgment of why a check could not run stay here.
 
+When `python3` is missing or older than 3.14, follow
+`references/python.md`.
+
 User arguments: $ARGUMENTS
 
 Without `<study-dir>`, the study is found as "The study directory" describes

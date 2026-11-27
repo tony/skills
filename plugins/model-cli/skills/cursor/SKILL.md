@@ -12,6 +12,9 @@ Run a prompt through Cursor's `agent` CLI. There is no fallback tier. Follow
 and the report. Write the report per
 `../../references/prose-rules.md`.
 
+When `python3` is missing or older than 3.14, follow
+`../../references/python.md`.
+
 ## Tier
 
 One tier, `agent`, with no `--model`, so Cursor uses its default model.

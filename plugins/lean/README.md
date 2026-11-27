@@ -61,4 +61,5 @@ confirms before editing. Prints a diff, never commits.
 ## Prerequisites
 
 - `python3` (3.14 or newer) runs `scripts/scope.py` for both editing skills and `scripts/tally.py` for `trim-comments`.
+- With an older `python3`, the skills look for Python 3.14 or newer on `PATH` or through uv, mise, asdf, or pyenv, and ask before uvx, uv, pipx, or mise downloads one.
 - Reads `AGENTS.md` / `CLAUDE.md` at runtime to match repo voice.

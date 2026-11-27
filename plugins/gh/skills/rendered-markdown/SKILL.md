@@ -27,9 +27,10 @@ description or a repository markdown file, also read
 2. Get the text. The script is `../../scripts/issue.py`; it resolves from
    this skill's directory to an absolute path written literally in each
    command, and `scan` and `lint` are documented in its docstring (its
-   other subcommands serve `create-issue`). When the text is already on
-   GitHub, fetch it from its issue, pull-request, or comment URL; writing
-   the fixed text back is the user's call:
+   other subcommands serve `create-issue`). When `python3` is missing or
+   older than 3.14, follow `../../references/python.md`. When the text is
+   already on GitHub, fetch it from its issue, pull-request, or comment
+   URL; writing the fixed text back is the user's call:
 
    ```console
    $ python3 /absolute/path/to/scripts/issue.py fetch URL

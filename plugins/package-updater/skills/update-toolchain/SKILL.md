@@ -56,6 +56,9 @@ vendor's feed rather than memory, with the commands in "Latest stable
 release" of `../../references/ecosystems.md`. Confirm the version exists
 before writing it.
 
+When `python3` is missing or older than 3.14, follow
+`../../references/python.md`.
+
 A pin that lists several versions (a mise array, several versions on one
 `.tool-versions` line, several lines of `.python-version`) is a support
 set. Move one entry only when the user

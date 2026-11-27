@@ -65,4 +65,7 @@ The format is detected from the existing changelog file; see Phase 1 of
 - git: For commit history analysis.
 - python3 (3.14 or newer): For the `rewrite-aggressively` backup and rebase
   helper, and the prerelease-section check.
+- With an older `python3`, the skills look for Python 3.14 or newer on `PATH`
+  or through uv, mise, asdf, or pyenv, and ask before uvx, uv, pipx, or mise
+  downloads one.
 - gh (optional): For PR and label detection.

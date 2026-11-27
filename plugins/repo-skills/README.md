@@ -68,6 +68,9 @@ in `references/skill-catalog.md`.
 ## Prerequisites
 
 - python 3.14 or newer (standard library only), for `scripts/evidence.py`
+- With an older `python3`, the skills look for Python 3.14 or newer on `PATH`
+  or through uv, mise, asdf, or pyenv, and ask before uvx, uv, pipx, or mise
+  downloads one.
 - git
 - `uvx`, to run the pinned `agentgrep` over local AI transcripts; without
   it the transcript source is reported unavailable

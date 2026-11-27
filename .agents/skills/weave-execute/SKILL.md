@@ -20,6 +20,8 @@ A request like `this skill apply the latest session` runs no workers: follow `re
 
 `<engine>` is `references/engine.py` resolved from this skill's directory to an absolute path, written literally in every command, and run with `python3`.
 
+When `python3` is missing or older than 3.14, follow `references/python.md`.
+
 If context already proves there is no repository or no commit, stop there.
 Use only: "Stopped: execute needs a project checkout with at least one commit."
 Then one bullet: "Run it from that checkout." Do not explain the stash or

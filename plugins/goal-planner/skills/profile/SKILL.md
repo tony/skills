@@ -16,6 +16,9 @@ Read [profile rules](../../references/profiles.md) and
 `../../scripts/planner.py`, resolved from this skill's directory to an absolute
 path written literally in commands.
 
+When `python3` is missing or older than 3.14, follow
+`../../references/python.md`.
+
 ## 1. Gather selections
 
 Read the request and selected existing profile; separate portable preferences,

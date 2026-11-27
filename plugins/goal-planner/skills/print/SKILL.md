@@ -18,6 +18,9 @@ at the applicable step below.
 `<planner>` is `../../scripts/planner.py`, resolved from this skill's directory
 to an absolute path written literally in every command.
 
+When `python3` is missing or older than 3.14, follow
+`../../references/python.md`.
+
 ## 1. Resolve the request
 
 Resolve outcome, target, delivery host, output mode, authorization, and holds

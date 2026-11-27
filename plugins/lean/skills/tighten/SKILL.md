@@ -35,6 +35,9 @@ it was read from) and write that absolute path literally in each command;
 shell variables do not persist between Bash calls. Never show that path in
 the reply.
 
+When `python3` is missing or older than 3.14, follow
+`../../references/python.md`.
+
 ## Steps
 
 1. **Resolve targets.** Read stdin with `--stdin`; with `--stdin` and no

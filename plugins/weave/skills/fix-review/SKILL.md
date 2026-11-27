@@ -11,6 +11,8 @@ Process weave code review findings from the latest recorded review session, or f
 
 `<engine>` is `../../scripts/engine.py` resolved from this skill's directory to an absolute path, written literally in every command, and run with `python3`. It prints JSON; `"ok": false` carries the reason.
 
+When `python3` is missing or older than 3.14, follow `../../references/python.md`.
+
 This command commits to a git repository, so check the repository before anything else, including the plan. Create the session directory:
 
 ```console

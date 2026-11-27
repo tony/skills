@@ -56,6 +56,9 @@ track --pin <file>...` names the track of each pin file; `package.json` and
 `go.mod` print `mixed` because their toolchain keys and dependency keys
 land as different tracks.
 
+When `python3` is missing or older than 3.14, follow
+`references/python.md`.
+
 Judgment stays with you: which in-range package earns its own commit
 under the "Named package bumps" conditions in that reference, and which
 packages form a release train. A move sorted wrong here produces a commit

@@ -120,6 +120,7 @@ order: `--memory-dir`, the in-tree directory, the cache directory. See
 
 - A git repository with a pytest suite.
 - `python3` (3.14 or newer) on `PATH` for `scripts/measure.py` and `scripts/isolate.py`, which do the timing arithmetic and the Git isolation.
+- With an older `python3`, the skills look for Python 3.14 or newer on `PATH` or through uv, mise, asdf, or pyenv, and ask before uvx, uv, pipx, or mise downloads one.
 - `rg` (ripgrep) on `PATH`: the static detectors search with it, and `00-scan` stops when it is missing.
 - A test command the skills can read from `AGENTS.md`, `CLAUDE.md`, `justfile`, `tox.ini`, or `pyproject.toml`.
 - Optional auto-detected plugins: `pytest-xdist`, `pytest-randomly`,

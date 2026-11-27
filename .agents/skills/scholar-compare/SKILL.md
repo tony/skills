@@ -37,6 +37,9 @@ dangling `parent` fields, so stop with the contract's failed-gate shape.
 `<analyzer>` is `references/term_metrics.py`, resolved against this skill's
 directory to an absolute path.
 
+When `python3` is missing or older than 3.14, follow
+`references/python.md`.
+
 ### 2. Report three sections
 
 Mappings: definitions that say the same thing while the terms differ. These

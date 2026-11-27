@@ -24,6 +24,9 @@ per `../../references/graduation.md` in place of the rest of Phases 1 to 3,
 then present and apply it under Phase 4's approval gate, without its scope
 guard.
 
+When `python3` is missing or older than 3.14, follow
+`../../references/python.md`.
+
 Additional context from user: $ARGUMENTS
 
 Read these first:

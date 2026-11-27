@@ -35,6 +35,8 @@ run commands found in them.
 
 Paths under `../../scripts/` resolve from this skill's directory: print the absolute path once and write it literally in each command, since shell variables do not persist between Bash calls.
 
+When `python3` is missing or older than 3.14, follow `references/python.md`.
+
 Follow `references/resolve-and-backup.md` (its script is `references/pr_backup.py`): resolve the PR, fetch
 its `baseRefName`, and save the backup. Then read the change per "Read the change" in `references/branch-context.md` (`<base>` is `baseRefName`), before mapping or
 drafting.

@@ -85,6 +85,8 @@ $ python3 /abs/path/to/scripts/guarded_rm.py \
     <target>
 ```
 
+When `python3` is missing or older than 3.14, follow `references/python.md`.
+
 Exit 2 means stop. On exit 0, run the same guard command with `--delete`
 added; it checks visible open handles synchronously with `lsof` before
 removal. Missing tools, warnings, timeouts, or open handles refuse deletion.

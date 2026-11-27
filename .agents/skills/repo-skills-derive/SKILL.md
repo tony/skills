@@ -26,6 +26,9 @@ path once, print it, and use that literal path in every command. It
 needs python 3.14 or newer. `<root>` is the target repository's top-level
 directory, written literally in each command.
 
+When `python3` is missing or older than 3.14, follow
+`references/python.md`.
+
 ## `$ARGUMENTS` contract
 
 - A positional path selects the target repository; empty means the

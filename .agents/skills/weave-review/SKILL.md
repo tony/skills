@@ -18,6 +18,8 @@ The focus area comes from `$ARGUMENTS`; without one, review the whole branch.
 
 `<engine>` is `references/engine.py` resolved from this skill's directory to an absolute path, written literally in every command, and run with `python3`.
 
+When `python3` is missing or older than 3.14, follow `references/python.md`.
+
 ## Worker selection
 
 

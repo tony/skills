@@ -22,6 +22,8 @@ $ python3 <topic.py> route --stdin <<'ARGS'
 ARGS
 ```
 
+When `python3` is missing or older than 3.14, follow `../../references/python.md`.
+
 `route` prints the `step`, the validated `flags`, the `references` to read, and the rest of the request as `request`, with `topic` set when that rest is one name or one quoted phrase; otherwise read the topic from `request`. It says when it inferred `continue` from `--fill` or `--expand`. On an error (an unknown option or an invalid value), report it and stop. With no step word, read the request and pick one:
 
 - A new topic or question: `../../references/start.md`.

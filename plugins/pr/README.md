@@ -114,5 +114,8 @@ existing structure without applying templates.
 
 - git: For diff/log.
 - python3 (3.14 or newer): For the backup script `/pr:refresh` and `/pr:rewrite` run.
+- With an older `python3`, the skills look for Python 3.14 or newer on `PATH`
+  or through uv, mise, asdf, or pyenv, and ask before uvx, uv, pipx, or mise
+  downloads one.
 - jq: For `/pr:review-pr` to select files from the PR file list.
 - gh: For PR creation/fetching; run `gh auth login` once.

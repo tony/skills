@@ -22,6 +22,9 @@ each claim must carry. Read `../../references/citation.md` for citation fields
 and `../../references/source-pins.md` for repository pins.
 `../../references/stage-gates.md` states each stage's exit condition.
 
+When `python3` is missing or older than 3.14, follow
+`../../references/python.md`.
+
 User arguments: $ARGUMENTS
 
 Read `../../references/output-contract.md` before writing study files.

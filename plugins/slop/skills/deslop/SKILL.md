@@ -38,6 +38,9 @@ print it, and write that literal path in every command below, since shell
 variables do not persist between Bash calls, and a relative path breaks
 from the repository root. The scripts need python3 (3.14 or newer).
 
+When `python3` is missing or older than 3.14, follow
+`../../references/python.md`.
+
 Likewise write the literal value of `BASELINE_SHA` and of each gate command
 wherever a step shows `<BASELINE_SHA>` or `<FORMAT_CMD>`; an unset variable
 turns `git log "..HEAD"` into a silent empty range.

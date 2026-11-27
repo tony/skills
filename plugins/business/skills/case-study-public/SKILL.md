@@ -25,6 +25,9 @@ until the gate passes:
 - `../../references/audiences.md`: the tier-3 contract and the final
   checklist.
 
+When `python3` is missing or older than 3.14, follow
+`../../references/python.md`.
+
 User arguments: $ARGUMENTS
 
 ## Procedure

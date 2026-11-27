@@ -66,6 +66,9 @@ both per `entry-rules.md`. Keep each entry's source commits for traceability.
 When the user asked for a final's section, write that section per
 `references/graduation.md` instead.
 
+When `python3` is missing or older than 3.14, follow
+`references/python.md`.
+
 ## Phase 3: Present for Review
 
 Approval gate. Do not edit before approval. Approval comes from, in order:

@@ -106,3 +106,4 @@ and no more verification is run than each fix needs.
 - **gh** (optional): enables pull-request feedback, CI watching, and
   review-agent detection
 - **python3** (3.14 or newer): runs the scripts for the ledger digest, base resolution, stash, revert, push, and in `goal` the CI and review-agent waits
+- With an older `python3`, the skills look for Python 3.14 or newer on `PATH` or through uv, mise, asdf, or pyenv, and ask before uvx, uv, pipx, or mise downloads one.

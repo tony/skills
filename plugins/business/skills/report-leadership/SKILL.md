@@ -47,6 +47,9 @@ register first. Exit 1 with `missing:` lines only means nothing is
 computable: render an evidence report per `measurement.md`, with the
 measured medians only and break-even stated as unknown.
 
+When `python3` is missing or older than 3.14, follow
+`../../references/python.md`.
+
 ### 3. Render the report
 
 Write `<run>/reports/leadership.md` with this fixed structure:

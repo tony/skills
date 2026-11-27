@@ -94,6 +94,9 @@ prereleases.
   `attempt` JSON field, `gh run watch --exit-status`, `gh run rerun --failed` and
   `gh cache delete`, checked against `gh` 2.102.0.
 - python3 (3.14 or newer) on `PATH`, for the bundled scripts.
+- With an older `python3`, the skills look for Python 3.14 or newer on `PATH`
+  or through uv, mise, asdf, or pyenv, and ask before uvx, uv, pipx, or mise
+  downloads one.
 - POSIX process groups for downstream repository discovery, checkout checks and
   publication timeouts.
 - The target project's toolchain (as required by quality gates).

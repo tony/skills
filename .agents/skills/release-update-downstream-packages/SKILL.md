@@ -32,6 +32,9 @@ describes: `references/consumer_inventory.py`, `references/publish.py`,
 absolute path literally in its commands, and show neither a script path nor a
 local root in replies.
 
+When `python3` is missing or older than 3.14, follow
+`references/python.md`.
+
 ---
 
 ## Phase 1: Inputs and Pre-flight

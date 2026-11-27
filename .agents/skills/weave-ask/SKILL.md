@@ -18,6 +18,8 @@ The question comes from `$ARGUMENTS`. With none, ask the user what they want to 
 
 `<engine>` is `references/engine.py` resolved from this skill's directory to an absolute path, written literally in every command, and run with `python3`.
 
+When `python3` is missing or older than 3.14, follow `references/python.md`.
+
 ## Worker selection
 
 

@@ -29,6 +29,9 @@ The loop owns all four.
 Write each `../../scripts/` path as an absolute path; the reply rules and
 script paths are in `references/report-contract.md`.
 
+When `python3` is missing or older than 3.14, follow
+`references/python.md`.
+
 ## The screening gate
 
 ```

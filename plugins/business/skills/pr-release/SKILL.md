@@ -47,6 +47,9 @@ run inputs changed, so regenerate it with
 sweep from `audiences.md`; a sweep failure routes back to the public
 case study, never into hand-patching here.
 
+When `python3` is missing or older than 3.14, follow
+`../../references/python.md`.
+
 ### 3. Compose one page
 
 From the public case study only:

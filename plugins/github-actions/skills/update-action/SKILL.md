@@ -18,6 +18,9 @@ Read `../../references/action-pinning.md` first, then
 `../../scripts/fleet.py` resolve from this skill's directory; print each
 absolute path once and write it literally in each command.
 
+When `python3` is missing or older than 3.14, follow
+`../../references/python.md`.
+
 User arguments: $ARGUMENTS
 
 Read them as `<owner/action> [target version]`, then the flags `--repo`

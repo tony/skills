@@ -29,6 +29,8 @@ stop and name any other value instead of writing it into a command. `../../scrip
 and `../../scripts/pins.py` resolve from this skill's directory; print each
 absolute path once and write it literally in each command.
 
+When `python3` is missing or older than 3.14, follow `../../references/python.md`.
+
 ## Procedure
 
 This skill supplies the scope and the fan-out.

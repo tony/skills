@@ -100,5 +100,8 @@ Install at least one CLI:
 - `agent`: [Cursor CLI](https://cursor.com/cli)
 
 `python3` (3.14 or newer) on a POSIX host runs the scripts in `scripts/`.
+With an older `python3`, the skills look for Python 3.14 or newer on `PATH`
+or through uv, mise, asdf, or pyenv, and ask before uvx, uv, pipx, or mise
+downloads one.
 The runner uses process groups to stop delegated children; native Windows
 execution is not supported.

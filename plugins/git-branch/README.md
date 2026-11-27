@@ -114,5 +114,8 @@ but its history is messy.
 - **git**: 2.38+ for `RECUT_UPDATE_REFS` (`--update-refs`). Check with
   `git --version`.
 - **python3**: 3.14+ for `scripts/branch_gate.py`.
+- With an older `python3`, the skills look for Python 3.14 or newer on `PATH`
+  or through uv, mise, asdf, or pyenv, and ask before uvx, uv, pipx, or mise
+  downloads one.
 - **gh**: (Optional) to read PRs, reviews, and linked issues. Degrades to
   git-only if missing.

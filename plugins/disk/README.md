@@ -73,6 +73,9 @@ The `disk` skill triggers either flow automatically under disk pressure.
 - `df`, `du`, `find`, `findmnt` (Linux), `git`, `python3` (3.14 or newer),
   `realpath`, `rsync` (additive merge), and
   `lsof` (open-file check before deleting; any warning refuses removal)
+- With an older `python3`, the skills look for Python 3.14 or newer on `PATH`
+  or through uv, mise, asdf, or pyenv, and ask before uvx, uv, pipx, or mise
+  downloads one.
 - WSL only: GNU `find` and `numfmt` (backing-file size) and `fstrim`
   (in-guest trim, run by you)
 - (Optional) `dust` for faster surveying, `strings` and `rg` for binary

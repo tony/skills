@@ -20,6 +20,9 @@ Read `references/evidence-tiers.md` for what each claim must carry and
 is `references/term_metrics.py`; `<analyzer>` below is its absolute path
 resolved from this skill's directory.
 
+When `python3` is missing or older than 3.14, follow
+`references/python.md`.
+
 User arguments: $ARGUMENTS
 
 Read `references/output-contract.md` before writing study files.

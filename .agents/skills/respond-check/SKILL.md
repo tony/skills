@@ -23,6 +23,9 @@ feedback for hashing. Acting on the ledger is the `respond-action` skill's job.
 Write each `../../scripts/` path as an absolute path; the reply rules and
 script paths are in `references/report-contract.md`.
 
+When `python3` is missing or older than 3.14, follow
+`references/python.md`.
+
 ## `$ARGUMENTS` contract
 
 A leading pull request number or URL names the PR to collect from

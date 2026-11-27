@@ -96,5 +96,6 @@ Defers CI-covered work to `gh pr checks --watch` when pushing.
 
 - git: Required for `git worktree`.
 - python3 (3.14 or newer): Runs `scripts/worktree_paths.py`, which derives branch slugs and worktree paths and tests the home-directory guard.
+- With an older `python3`, the skills look for Python 3.14 or newer on `PATH` or through uv, mise, asdf, or pyenv, and ask before uvx, uv, pipx, or mise downloads one.
 - gh (optional): For GitHub integration.
 - Tracker MCP server (optional): For tools like Linear.

@@ -24,6 +24,8 @@ Before the plan is approved, and in every audit, run ruff only as `uv run --no-s
 
 Two scripts do the deterministic work: `references/default_delta.py` measures and `references/ruff_pins.py` finds pin sites, reads resolved versions and computes cooldown lapse times. Resolve each against this skill's directory to an absolute path and write that path literally in each command. Every `default_delta.py` call passes `--cwd` with the repository or worktree it works on, never the shell's directory. It runs ruff with fixes and output redirection disabled and edits only under `--apply`.
 
+When `python3` is missing or older than 3.14, follow `references/python.md`.
+
 ## Procedure
 
 ### 1. Resolve the target version

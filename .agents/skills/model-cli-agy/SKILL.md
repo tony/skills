@@ -16,6 +16,9 @@ CLI with a Gemini model. Follow `references/dispatch.md` for triggers,
 running a tier, failure handling, and the report. Write the report per
 `references/prose-rules.md`.
 
+When `python3` is missing or older than 3.14, follow
+`references/python.md`.
+
 ## Tiers
 
 Pick the tier and each model by the rules in `references/dispatch.md`,

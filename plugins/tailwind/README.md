@@ -66,4 +66,7 @@ Target specific files or components:
   version and adjusts `space-x`/`space-y` advice for it
 - `python3` (3.14 or newer) for the detect script; without it the skill falls back to `rg`
   (ripgrep), then to reading files
+- With an older `python3`, the skills look for Python 3.14 or newer on `PATH`
+  or through uv, mise, asdf, or pyenv, and ask before uvx, uv, pipx, or mise
+  downloads one.
 - Template files in any supported framework

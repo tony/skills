@@ -39,6 +39,9 @@ and realization) and exits 1. Exit 0 means every input is present;
 go to step 3. A negative savings rate is valid: it is a measured loss,
 reported in step 3, and you never ask for a replacement value.
 
+When `python3` is missing or older than 3.14, follow
+`../../references/python.md`.
+
 For each id it names, ask the user once via `AskUserQuestion`, in one
 batch, explaining each factor per `measurement.md`. Append every
 answer to `assumptions.yaml` as a full entry (`interim-format.md` §

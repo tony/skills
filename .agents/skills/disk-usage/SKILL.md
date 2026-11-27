@@ -70,6 +70,9 @@ $ python3 /abs/path/to/scripts/survey.py \
     <scoped-path-or-mount-point>
 ```
 
+When `python3` is missing or older than 3.14, follow
+`references/python.md`.
+
 `largest` ranks the biggest directories below the path whatever the floor.
 An unreadable path or an expired `--time-limit` sets `"complete": false`;
 sizes are then lower bounds, so report them as "at least" and name the
