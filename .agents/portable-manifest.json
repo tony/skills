@@ -1117,7 +1117,7 @@
         "references/stage-gates.md": "plugins/scholar/references/stage-gates.md",
         "references/term_metrics.py": "plugins/scholar/scripts/term_metrics.py"
       },
-      "bytes": 86660
+      "bytes": 86674
     },
     {
       "name": "scholar-distill",
@@ -1213,6 +1213,23 @@
         "references/term_metrics.py": "plugins/scholar/scripts/term_metrics.py"
       },
       "bytes": 69070
+    },
+    {
+      "name": "scholar-typologies",
+      "sources": [
+        "plugins/scholar/skills/typologies/SKILL.md"
+      ],
+      "bundled": {
+        "references/citation.md": "plugins/scholar/references/citation.md",
+        "references/concept-sets.md": "plugins/scholar/references/concept-sets.md",
+        "references/concept_sets.py": "plugins/scholar/scripts/concept_sets.py",
+        "references/evidence-tiers.md": "plugins/scholar/references/evidence-tiers.md",
+        "references/output-contract.md": "plugins/scholar/references/output-contract.md",
+        "references/prose-rules.md": "plugins/scholar/references/prose-rules.md",
+        "references/python.md": "plugins/scholar/references/python.md",
+        "references/term_metrics.py": "plugins/scholar/scripts/term_metrics.py"
+      },
+      "bytes": 102000
     },
     {
       "name": "scholar-verify",
@@ -1775,10 +1792,10 @@
     }
   ],
   "duplication": {
-    "plugins/scholar/references/output-contract.md": 11,
-    "plugins/scholar/references/prose-rules.md": 11,
-    "plugins/scholar/references/python.md": 11,
-    "plugins/scholar/scripts/term_metrics.py": 11,
+    "plugins/scholar/references/output-contract.md": 12,
+    "plugins/scholar/references/prose-rules.md": 12,
+    "plugins/scholar/references/python.md": 12,
+    "plugins/scholar/scripts/term_metrics.py": 12,
     "plugins/weave/references/present-results.md": 11,
     "plugins/weave/references/prose-rules.md": 11,
     "plugins/weave/references/python.md": 11,
@@ -1787,12 +1804,12 @@
     "plugins/scholar/references/stage-gates.md": 10,
     "plugins/weave/references/ensemble-core.md": 10,
     "plugins/weave/references/worker-backends.md": 10,
+    "plugins/scholar/references/citation.md": 7,
     "plugins/business/references/interim-format.md": 6,
     "plugins/business/references/prose-rules.md": 6,
     "plugins/business/references/provenance.md": 6,
     "plugins/business/references/python.md": 6,
     "plugins/business/scripts/business.py": 6,
-    "plugins/scholar/references/citation.md": 6,
     "plugins/weave/references/deslop-pass.md": 6,
     "plugins/business/references/audiences.md": 5,
     "plugins/pr/references/prose-rules.md": 5,
@@ -1802,6 +1819,7 @@
     "plugins/pytest-optimizer/references/python.md": 5,
     "plugins/pytest-optimizer/scripts/isolate.py": 5,
     "plugins/pytest-optimizer/scripts/measure.py": 5,
+    "plugins/scholar/references/evidence-tiers.md": 5,
     "plugins/situate/references/authenticated-sources.md": 5,
     "plugins/situate/references/prose-rules.md": 5,
     "plugins/situate/references/python.md": 5,
@@ -1827,7 +1845,6 @@
     "plugins/pr/references/branch-context.md": 4,
     "plugins/pytest-optimizer/references/durations-parsing.md": 4,
     "plugins/pytest-optimizer/templates/pytest_optimizer_plugin.py": 4,
-    "plugins/scholar/references/evidence-tiers.md": 4,
     "plugins/scholar/references/source-pins.md": 4,
     "plugins/scholar/scripts/scholar_pins.py": 4,
     "plugins/terraform/references/lock-and-init.md": 4,
@@ -2038,6 +2055,8 @@
     "plugins/ruff/scripts/default_delta.py": 1,
     "plugins/ruff/scripts/ruff_pins.py": 1,
     "plugins/scholar/.claude-plugin/plugin.json": 1,
+    "plugins/scholar/references/concept-sets.md": 1,
+    "plugins/scholar/scripts/concept_sets.py": 1,
     "plugins/scholar/scripts/verify_report.py": 1,
     "plugins/self-improvement/references/detecting-invocations.md": 1,
     "plugins/self-improvement/references/worked-example-spike.md": 1,

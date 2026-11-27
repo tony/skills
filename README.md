@@ -75,7 +75,7 @@ changes, and `respond` to screen review feedback.
 | Plugin | Description |
 |--------|-------------|
 | [research](plugins/research/) | Research topics and assess decisions with pinned, captured sources in dated folders. Resume, re-verify, report. Clones dependencies at pinned versions. |
-| [scholar](plugins/scholar/) | Distil a checkable ontology from a codebase, a repository set, or a written corpus. Types, controlled vocabulary, cited and measured evidence. |
+| [scholar](plugins/scholar/) | Distil a checkable ontology from a codebase, a repository set, or a written corpus. Types, controlled vocabulary, concept sets, cited and measured evidence. |
 | [business](plugins/business/) | Measure and report the business value of AI workflows from provenance-tagged data, in engineer-hours and cycle time, never currency. |
 
 ### Agents and models

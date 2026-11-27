@@ -1,0 +1,16 @@
+{
+  "skill_name": "typologies",
+  "trigger": {
+    "positive": [
+      { "prompt": "find the named concept sets in psychology that my catalog lacks", "top_k": 1 },
+      { "prompt": "which typologies and stage models in developmental psychology are missing from my list", "top_k": 2 },
+      { "prompt": "inventory the typologies, stage models, and level hierarchies of personality theory", "top_k": 2 },
+      { "prompt": "survey the concept systems in organizational behavior and cite primary sources", "top_k": 2 }
+    ],
+    "negative": [
+      { "prompt": "distil an ontology from this codebase", "owner": "ontology" },
+      { "prompt": "set the request timeout to thirty seconds" },
+      { "prompt": "set up a concept map for my notes app" }
+    ]
+  }
+}
