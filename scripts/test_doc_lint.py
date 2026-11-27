@@ -92,6 +92,21 @@ def test_exempt_skill_needs_no_prose_link(enforced: Path, monkeypatch: pytest.Mo
     assert marketplace._check_doc_rules() == []
 
 
+def test_skill_running_a_script_links_python_fallback(enforced: Path) -> None:
+    """A skill naming a bundled script links python.md; naming only its test needs none."""
+    body = "---\nname: s\ndescription: d\n---\n../../references/prose-rules.md\nRun {}.\n"
+    _plugin(enforced, "p", body.format("../../scripts/gate.py"))
+    scripts = enforced / "plugins" / "p" / "scripts"
+    scripts.mkdir()
+    for name in ("gate.py", "test_gate.py"):
+        _ = (scripts / name).write_text("", encoding="utf-8")
+    missing = "runs a bundled script with no link to ../../references/python.md"
+    assert marketplace._check_doc_rules() == [f"[p] skills/s/SKILL.md:1: {missing}"]
+    skill = enforced / "plugins" / "p" / "skills" / "s" / "SKILL.md"
+    _ = skill.write_text(body.format("gate.py per ../../references/python.md"), encoding="utf-8")
+    assert marketplace._check_doc_rules() == []
+
+
 def test_unenforced_rules_stay_quiet(enforced: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     """Rules outside the enforced set produce no lint error."""
     _plugin(enforced, "p", _SKILL)

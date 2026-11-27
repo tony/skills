@@ -175,6 +175,8 @@ Treat this file like code and prune it.
   Gather context in a numbered step instead.
 - Never link outside the plugin; each plugin installs alone.
 - Every step that writes human-facing prose links `../../references/prose-rules.md`.
+- A skill that runs a bundled Python script links `../../references/python.md`,
+  the fallback for a `python3` older than 3.14 ([PYTHON.md](.github/PYTHON.md#two-floors)).
 - Put deterministic machinery (argument parsing, process control, git
   plumbing) in a tested script under the plugin's `scripts/`; keep judgment in
   prose. A skill that runs one says its `../../scripts/` path resolves from
@@ -190,9 +192,10 @@ Treat this file like code and prune it.
 
 `scripts/marketplace.py lint` enforces the `!` and plugin-boundary rules, the plugin layout below, a
 500-line ceiling on skill bodies, a contents list on any resource over 100
-lines, that every resource is named by some file in its plugin, and that a
-Bash grader naming a bundled script also matches it called through a shell
-variable (`python3 $G sub`).
+lines, that every resource is named by some file in its plugin, that a skill
+naming a bundled Python script links `python.md`, and that a Bash grader
+naming a bundled script also matches it called through a shell variable
+(`python3 $G sub`).
 
 ### Plugin Directory Structure
 

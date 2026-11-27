@@ -1585,6 +1585,7 @@ DOC_RULES = (
     "ecosystem-command",
     "gnu-only",
     "prose-rules-link",
+    "python-link",
     "console-multi",
     "comment-run",
 )
@@ -1640,6 +1641,9 @@ def doc_violations() -> list[DocViolation]:
     """Collect every doc-rule violation under ``plugins/`` and the root docs."""
     out: list[DocViolation] = []
     for plugin_dir in discover_plugins():
+        bundled = sorted(
+            p.name for p in plugin_dir.glob("scripts/*.py") if not p.name.startswith("test_")
+        )
         for path in sorted(plugin_dir.rglob("*.md")):
             rel = path.relative_to(plugin_dir)
             if rel.parts[0] in {"evals", ".claude-plugin", ".codex-plugin"}:
@@ -1662,6 +1666,16 @@ def doc_violations() -> list[DocViolation]:
                         rel.as_posix(),
                         1,
                         "no link to ../../references/prose-rules.md",
+                    )
+                )
+            if path.name == "SKILL.md" and _doc_lint.lacks_python_link(text, bundled):
+                out.append(
+                    DocViolation(
+                        "python-link",
+                        plugin_dir.name,
+                        rel.as_posix(),
+                        1,
+                        "runs a bundled script with no link to ../../references/python.md",
                     )
                 )
     scripts = [
